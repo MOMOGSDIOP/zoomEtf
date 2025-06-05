@@ -1,0 +1,108 @@
+.etf-filters-container {
+  padding: 16px;
+  background:  var(--background-color);
+  border-radius: 8px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color:var(--text-color);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filters-header h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.btn-reset {
+  background-color: var(--background-color);
+  color:var(--text-color);
+  border: none;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.25s ease;
+  font-size: 0.9rem;
+}
+
+.btn-reset:hover {
+  background-color: var(--background-color);
+}
+
+.filters-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.filter-block label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.filter-block select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #bbb;
+  font-size: 0.95rem;
+  color:var(--text-color);
+  background-color:var(--background-color);
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.filter-block select:hover,
+.filter-block select:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
+.sort-controls {
+  display: flex;
+  gap: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  cursor: pointer;
+  user-select: none;
+  font-size: 1rem;
+}
+
+.sort-controls span.sort-active {
+  color:var(--text-color);
+  text-decoration: underline;
+}
+
+.sort-controls span.sort-inactive:hover {
+  color: var(--text-color);
+  text-decoration: underline;
+}
+
+.sort-active, 
+.sort-inactive {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; 
+  font-weight: 600; 
+  font-size: 1rem; 
+  color:var(--text-color);
+  transition: color 0.2s ease;
+}

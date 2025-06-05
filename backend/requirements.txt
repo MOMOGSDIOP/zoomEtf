@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+httpx
+beautifulsoup4
+lxml
+requests
+pydantic~=1.10
+redis
+elasticsearch
+python-dotenv
+
+# Pour les tests
+pytest
+pytest-asyncio
+
+#Prometheus
+prometheus_fastapi_instrumentator

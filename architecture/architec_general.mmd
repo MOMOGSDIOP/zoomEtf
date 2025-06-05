@@ -1,0 +1,8 @@
+graph TD
+    A[Frontend] --> B[Backend]
+    B --> C[(PostgreSQL)]
+    B --> D[Redis]
+    C --> E[Elasticsearch]
+    D --> F[Cache]
+    B --> G[Yahoo Finance API]
+    B --> H[JustETF Scraper]

@@ -1,0 +1,41 @@
+.etf-identity {
+  position: relative;
+  margin: 20px 40px; /* décale sur le côté, pas centré */
+  padding: 20px;
+  max-width: 600px;
+  background-color: var(--background-paper, #12243a); /* fond sombre */
+  color: var(--text-primary, #e0e0e0); /* texte clair */
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6);
+  font-family: 'Inter', sans-serif;
+  text-align: left; /* pas centré */
+}
+
+/* Si tu utilises un contexte React pour mode sombre, les variables CSS peuvent être définies dynamiquement */
+
+.etf-identity strong {
+  color: var(--text-secondary, #bbbbbb);
+}
+
+
+/* Bouton Retour en haut à droite */
+.etf-identity button {
+  position: absolute;
+  top: 15px;
+  right: 10px; /* décale davantage vers le bord */
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background-color: #007bff; /* bleu vif, pas rouge */
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.5);
+  transition: background-color 0.3s ease;
+}
+
+.etf-identity button:hover {
+  background-color: #0056b3;
+  box-shadow: 0 7px 18px rgba(0, 86, 179, 0.7);
+}

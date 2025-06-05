@@ -1,0 +1,6 @@
+graph TD
+  A[Front: React] --> B[Backend: FastAPI]
+  B --> C[(DB: PostgreSQL)]
+  B --> D[Cache: Redis]
+  C --> E[APIs: Yahoo Finance]
+  D --> F[Scraping: Puppeteer]

@@ -1,0 +1,32 @@
+
+.feature-page {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 24px;
+  background-color: var(--background-color);
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
+}
+
+.feature-page h4 {
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.MuiPaper-root {
+  background-color: var(--background-color);
+}
+
+.MuiButton-outlined {
+  margin-top: 20px;
+  color: var(--text-color);
+  border-color: var(--primary-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.MuiButton-outlined:hover {
+  background-color: var(--backgroundé-color);
+  color: var(--text-color);
+}

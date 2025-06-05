@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: zoometf-backend  # 🔹 nom d’image
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - elasticsearch
+    ports:
+      - "8000:8000"  # 🔹 expose FastAPI
+    environment:
+      - PYTHONPATH=/zoom-etf/backend
+    volumes:
+      - ./backend:/zoom-etf/backend  # 🔥 live-reload du code sans rebuild
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload  # 🔁 reload auto
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # évite que le host écrase node_modules
+    ports:
+      - "3001:3000"  # 3001 local → 3000 dans le conteneur
+    command: sh -c "npm install && npm start"
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # 🔁 nécessaire pour hot reload dans Docker
+    restart: unless-stopped
+
+  docs:
+    image: nginx:alpine
+    volumes:
+      - ./docs/site:/usr/share/nginx/html:ro
+    ports:
+      - "4000:80"
+    restart: unless-stopped

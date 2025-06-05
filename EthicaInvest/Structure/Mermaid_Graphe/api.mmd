@@ -1,0 +1,7 @@
+graph LR
+  Start -->|Input| A[API]
+  A -->|Réponse| B{Valide?}
+  B -->|Oui| C[(Base de données)]
+  B -->|Non| D[Scraping]
+  D --> E[Proxy]
+  E --> C

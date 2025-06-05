@@ -1,0 +1,35 @@
+.etf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  color:var(--text-color);
+}
+
+.etf-table th,
+.etf-table td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.etf-table th {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.etf-table tbody tr:nth-child(even) {
+  background-color:  var(--background-color);
+}
+
+.etf-table tbody tr:hover {
+  background-color:  var(--background-color);
+}
+
+.etf-table th:nth-child(2),
+.etf-table td:nth-child(2),
+.etf-table th:nth-child(3),
+.etf-table td:nth-child(3),
+.etf-table th:nth-child(4),
+.etf-table td:nth-child(4) {
+  text-align: right;
+}

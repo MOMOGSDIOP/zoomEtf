@@ -1,0 +1,25 @@
+.etf-list-wrapper {
+  padding: 1rem;
+}
+
+.clickable-title {
+  margin-bottom: 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.clickable-title:hover {
+  text-decoration: underline;
+}
+
+/* Ligne ETF interactive */
+.etf-row {
+  cursor: pointer;
+  transition:  var(--background-color) 0.2s ease;
+}
+
+/* Effet hover sans couleur en dur (MUI gère les couleurs) */
+.etf-row:hover {
+  filter: brightness(1.05);
+}

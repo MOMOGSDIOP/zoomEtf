@@ -1,0 +1,84 @@
+zoom-etf/
+├── backend/                  
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py           
+│   │   ├── core/
+│   │   │   ├── config.py      
+│   │   │   └── settings.py
+│   │   ├── services/
+│   │   │   ├── yahoo.py      
+│   │   │   └── justetf_scraper.py
+│   │   ├── utils/
+│   │   │   ├── cache.py      
+│   │   │   └── logger.py
+│   │   └── api/
+│   │       └── endpoints/
+│   │           ├── etfs.py   
+│   │           └── admin.py
+│   ├── tests/
+│   │   ├── test_yahoo.py
+│   │   └── test_scraper.py
+│   └── requirements.txt
+│
+├── frontend/
+│   └── src/
+│       ├── components/
+│       │   ├── ETFChart.js
+│       │   ├── ETFFilters.js
+│       │   ├── ETFFiltersManager.js
+│       │   ├── ETFList.js
+│       │   ├── ETFListFull.js                  # Nouveau
+│       │   ├── ETFSearcher.js
+│       │   ├── ETFTable.js
+│       │   ├── UserPortfolio.js
+│       │   ├── ETFIdentity.js                  # Nouveau
+│       │   ├── quadrants/                      # Nouveau dossier
+│       │   │   ├── BottomLeftQuadrant.js       # Nouveau
+│       │   │   ├── BottomRightQuadrant.js      # Nouveau
+│       │   │   ├── TopLeftQuadrant.js          # Nouveau
+│       │   │   └── TopRightQuadrants.js        # Nouveau
+│       │   └── userportfolio/
+│       │       ├── UserPortfolioAnalysis.js
+│       │       ├── UserPortfolioConseils.js
+│       │       ├── UserPortfolioDividendes.js
+│       │       ├── UserPortfolioExport.js
+│       │       ├── UserPortfolioList.js
+│       │       ├── UserPortfolioPerformance.js
+│       │       ├── UserPortfolioRebalancement.js
+│       │       ├── UserPortfolioAlert.js       # Nouveau
+│       │       └── UserPortfolioTransaction.js # Nouveau
+│       ├── data/
+│       │   ├── countries.js
+│       │   └── etfs.js
+│       ├── pages/
+│       │   ├── Dashboard.js
+│       ├── styles/
+│       │   ├── ETFFilters.css
+│       │   ├── ETFTable.css
+│       │   ├── Global.css
+│       │   ├── GridLayout.css
+│       │   ├── MediaQueries.css
+│       │   ├── ETFidentity.css                 
+│       │   ├── UserPortfolio.css               
+│       │   └── UserPortfolioFeature.css 
+│       │   └── Theme.js     
+│       ├── utils/
+│       │   ├── export.js
+│       ├── App.js
+│       ├── index.css
+│       ├── index.js
+│       ├── Dockerfile
+│       ├── package.json
+│       └── package-lock.json
+│
+├── monitoring/               
+│   ├── prometheus.yml        
+│   └── grafana/              
+│
+├── docker-compose.yml        
+├── README.md
+└── docs/
+    ├── ARCHITECTURE.md       
+    ├── DECISIONS.md          
+    └── API.md
