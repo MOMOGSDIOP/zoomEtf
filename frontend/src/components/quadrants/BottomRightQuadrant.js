@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import ETFList from '../ETFList';
 import ETFIdentity from '../ETFIdentity';
 import ETFListFull from '../ETFListFull';
+import ETFIdentityFull from '../../pages/ETFIdentityFull';
 
 export default function BottomRightQuadrant({ isExpanded }) {
   const [view, setView] = useState('list');

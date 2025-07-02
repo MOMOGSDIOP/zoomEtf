@@ -2,33 +2,30 @@ import React from 'react';
 import {
   Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
-  Paper, Typography
+  Paper
 } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import '../styles/ETFTable.css';
 
-export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder = 'desc',onBack, onSelectETF}) {
-  // Définition dynamique des colonnes selon sortKey
+export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder = 'desc', onBack, onSelectETF }) {
   const columns = [
     { key: 'name', label: 'Nom', align: 'left' },
     sortKey === 'price'
-      ? { key: 'price', label: 'Prix (€)', align: 'right' }
-      : { key: 'performance', label: 'Performance (1an)', align: 'right' },
+      ? { key: 'price', label: 'Price(€)', align: 'right' }
+      : { key: 'performance', label: 'Performance', align: 'right' },
     sortKey === 'price'
-      ? { key: 'performance', label: 'Performance (1an)', align: 'right' }
-      : { key: 'price', label: 'Prix (€)', align: 'right' },
-    { key: 'currentPrice', label: 'Cours actuel', align: 'right' },
+      ? { key: 'performance', label: 'Performance', align: 'right' }
+      : { key: 'price', label: 'Price(€)', align: 'right' },
+    { key: 'currentPrice', label: 'Value(€)', align: 'right' },
     { key: 'issuer', label: 'Émetteur', align: 'left' }
   ];
 
-  // Sous-composant pour afficher cours actuel avec flèche
   const PriceWithArrow = ({ currentPrice, previousClose }) => {
     if (typeof currentPrice !== 'number') return <span>-</span>;
-
     const priceFixed = currentPrice.toFixed(2);
-
     let arrow = null;
+
     if (typeof previousClose === 'number') {
       if (currentPrice > previousClose) {
         arrow = <ArrowDropUpIcon color="success" />;
@@ -39,22 +36,23 @@ export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder
 
     return (
       <span>
-        {priceFixed} € {arrow}
+        {priceFixed} {arrow}
       </span>
     );
   };
 
   return (
     <Paper elevation={3} sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Liste complète des ETFs
-      </Typography>
-      <TableContainer>
+      <TableContainer className="etf-table-container">
         <Table className="etf-table">
           <TableHead>
             <TableRow>
               {columns.map((col) => (
-                <TableCell key={col.key} align={col.align}>
+                <TableCell
+                  key={col.key}
+                  align={col.align}
+                  className={col.align === 'right' ? 'cell-right' : 'cell-left'}
+                >
                   {col.label}
                 </TableCell>
               ))}
@@ -63,19 +61,27 @@ export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder
           <TableBody>
             {etfs.length > 0 ? (
               etfs.map((etf, i) => (
-                <TableRow  key={i} 
-                  hover 
+                <TableRow
+                  key={i}
+                  hover
                   sx={{ cursor: 'pointer' }}
-                  onClick={() => onSelectETF && onSelectETF(etf.name)}>
+                  onClick={() => onSelectETF && onSelectETF(etf.name)}
+                >
                   {columns.map((col) => {
+                    const alignClass = col.align === 'right' ? 'cell-right' : 'cell-left';
+
                     switch (col.key) {
                       case 'name':
-                        return <TableCell key={col.key}>{etf.name}</TableCell>;
+                        return (
+                          <TableCell key={col.key} align={col.align} className={alignClass}>
+                            {etf.name}
+                          </TableCell>
+                        );
 
                       case 'price':
                         return (
-                          <TableCell key={col.key} align={col.align}>
-                            {typeof etf.price === 'number' ? etf.price.toFixed(2) + ' €' : '-'}
+                          <TableCell key={col.key} align={col.align} className={alignClass}>
+                            {typeof etf.price === 'number' ? etf.price.toFixed(2) : '-'}
                           </TableCell>
                         );
 
@@ -84,6 +90,7 @@ export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder
                           <TableCell
                             key={col.key}
                             align={col.align}
+                            className={alignClass}
                             sx={{ color: etf.performance >= 0 ? 'success.main' : 'error.main' }}
                           >
                             {etf.performance > 0 ? '+' : ''}
@@ -93,7 +100,7 @@ export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder
 
                       case 'currentPrice':
                         return (
-                          <TableCell key={col.key} align={col.align}>
+                          <TableCell key={col.key} align={col.align} className={alignClass}>
                             <PriceWithArrow
                               currentPrice={etf.currentPrice}
                               previousClose={etf.previousClose}
@@ -102,10 +109,18 @@ export default function ETFTable({ etfs = [], sortKey = 'performance', sortOrder
                         );
 
                       case 'issuer':
-                        return <TableCell key={col.key}>{etf.issuer || '-'}</TableCell>;
+                        return (
+                          <TableCell key={col.key} align={col.align} className={alignClass}>
+                            {etf.issuer || '-'}
+                          </TableCell>
+                        );
 
                       default:
-                        return <TableCell key={col.key}>-</TableCell>;
+                        return (
+                          <TableCell key={col.key} align={col.align} className={alignClass}>
+                            -
+                          </TableCell>
+                        );
                     }
                   })}
                 </TableRow>

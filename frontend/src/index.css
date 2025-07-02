@@ -17,3 +17,10 @@
   --accent-color: #64b5f6;
   --shadow-color: rgba(0, 0, 0, 0.35);
 }
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}

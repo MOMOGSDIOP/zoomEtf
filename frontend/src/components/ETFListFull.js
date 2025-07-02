@@ -6,9 +6,12 @@ import {
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import '../styles/ETFListfull.css';
-import etfs from '../data/etfs';
+import etfs from '../data/dataETFsFull';
+import { useNavigate } from 'react-router-dom';
 
 export default function ETFListFull({ type, onBack, onSelectETF }) {
+  const navigate = useNavigate();
+
   if (!type || (type !== 'best' && type !== 'worst')) {
     return <Typography variant="body1" sx={{ m: 2 }}>Type non reconnu</Typography>;
   }
@@ -17,6 +20,7 @@ export default function ETFListFull({ type, onBack, onSelectETF }) {
     ((etf.currentPrice - etf.previousClose) / etf.previousClose) * 100;
 
   const sortedETFs = etfs.filter(etf => etf.currentPrice && etf.previousClose);
+
   const data = [...sortedETFs].sort((a, b) =>
     type === 'best'
       ? calculateDailyPerformance(b) - calculateDailyPerformance(a)
@@ -56,7 +60,7 @@ export default function ETFListFull({ type, onBack, onSelectETF }) {
                 key={etf.name}
                 hover
                 sx={{ cursor: 'pointer' }}
-                onClick={() => onSelectETF(etf.name)}
+                onClick={() => onSelectETF && onSelectETF(etf.name)}
               >
                 <TableCell>{etf.name}</TableCell>
                 <TableCell align="right">

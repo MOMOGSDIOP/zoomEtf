@@ -5,8 +5,31 @@ import {
 } from '@mui/material';
 import etfs from '../../data/etfs';
 import '../../styles/UserPortfolioFeature.css';
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Menu,
+  MenuItem
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
+
+
 
 export default function ListeETFs({ onBack, onSelectETF }) {
+
+  const navigate = useNavigate();
+  const { toggleTheme, mode } = useTheme();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
   const PriceWithArrow = ({ currentPrice, previousClose }) => {
     const performance = ((currentPrice - previousClose) / previousClose) * 100;
     const formatted = performance.toFixed(2) + ' %';
@@ -26,7 +49,7 @@ export default function ListeETFs({ onBack, onSelectETF }) {
         mb: 2
       }}>
         <Typography variant="h4">Liste de mes ETFs</Typography>
-        <Button variant="outlined" onClick={onBack}>Retour</Button>
+        <Button variant="outlined" onClick={() => navigate('/userportfolio')}>Retour</Button>
       </Box>
 
       <Paper sx={{ marginBottom: 3 }}>

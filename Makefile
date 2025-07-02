@@ -2,6 +2,12 @@
 COMPOSE = docker-compose
 PROJECT_NAME = zoometf
 
+
+# INIT DB (création des tables)
+init-db:
+	docker compose exec backend python -m app.core.init_db
+
+
 # BUILD GLOBAL
 build: build-backend build-frontend build-docs
 
@@ -9,7 +15,7 @@ rebuild: clean build
 
 # LIFECYCLE
 up:
-	$(COMPOSE) up --build -d
+	COMPOSE_HTTP_TIMEOUT=300 $(COMPOSE) up --build -d
 
 down:
 	$(COMPOSE) down
@@ -33,8 +39,8 @@ test: test-backend
 
 # FRONTEND
 build-frontend:
-	docker build -t $(PROJECT_NAME)-frontend ./frontend
-
+	docker build -t zoometf -f frontend/Dockerfile .
+	
 # DOCS STATIQUES
 build-docs:
 	mkdir -p docs/site
@@ -43,7 +49,7 @@ build-docs:
 
 # CLEAN
 clean:
-	docker system prune -f
+	docker system prune -f 
 	$(COMPOSE) down -v --remove-orphans
 
 # MONITORING

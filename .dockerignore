@@ -1,0 +1,12 @@
+node_modules
+build
+.git
+.gitignore
+.env
+node_modules
+.git
+__pycache__
+*.pyc
+frontend/node_modules
+backend/__pycache__
+# Ignore Dockerfile and docker-compose files

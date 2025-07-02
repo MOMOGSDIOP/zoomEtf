@@ -1,37 +1,29 @@
-# backend/app/utils/cache.py
+import time
+from threading import Lock
 
-import redis
-import pickle
-from datetime import datetime
-
-from app.core.settings import settings  # <- Import correct de l'objet settings
-
-class CacheManager:
+class SimpleCache:
     def __init__(self):
-        self.client = redis.Redis.from_url(settings.REDIS_URL)
+        self._store = {}
+        self._lock = Lock()
 
-    def get(self, key: str):
-        """Récupère une valeur du cache"""
-        if cached := self.client.get(key):
-            return pickle.loads(cached)
-        return None
+    def set(self, key, value, expire=None):
+        with self._lock:
+            expire_at = time.time() + expire if expire else None
+            self._store[key] = (value, expire_at)
 
-    def set(self, key: str, value: any, ttl: int = 3600):
-        """Stocke une valeur avec expiration"""
-        self.client.setex(key, ttl, pickle.dumps(value))
+    def get(self, key):
+        with self._lock:
+            data = self._store.get(key)
+            if not data:
+                return None
+            value, expire_at = data
+            if expire_at and expire_at < time.time():
+                del self._store[key]
+                return None
+            return value
 
-    async def log_error(self, message: str):
-        """Log une erreur dans Redis"""
-        error_key = f"error:{datetime.utcnow().timestamp()}"
-        self.client.hset(error_key, mapping={
-            "message": message,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+    def delete(self, key):
+        with self._lock:
+            self._store.pop(key, None)
 
-    def get_volatility(self, symbol: str) -> float:
-        """Récupère la volatilité depuis Redis"""
-        return float(self.client.get(f"volatility:{symbol}") or 1.0)
-
-
-# Création du cache global
-cache = CacheManager()
+cache = SimpleCache()

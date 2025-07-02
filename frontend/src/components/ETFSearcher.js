@@ -1,108 +1,148 @@
-import React, { useState, useEffect } from 'react';
+// semanticETFSearcher.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   TextField, Button, Box, Typography,
   Paper, InputAdornment, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Alert
+  Alert, CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import etfs from '../data/etfs';
 
-export default function ETFSearcher({ onSelectETF }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const [notFound, setNotFound] = useState(false);
-  const [inputError, setInputError] = useState(false);
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+// Fonctions utilitaires externes
+import { analyzeUserQuery, extractKeywords } from '../utils/semanticAnalysis';
+import { validateETF } from '../utils/etfValidation';
 
-  // Validation des données ETF
-  const isValidETF = (etf) => {
-    return etf && 
-           typeof etf === 'object' && 
-           etf.name && 
-           typeof etf.name === 'string';
+const POPULAR_SUGGESTIONS = [
+  { label: "ETF Tech", filter: "Technologie" },
+  { label: "ETF ESG", filter: "ESG" },
+  { label: "ETF Europe", filter: "Europe" },
+  { label: "ETF Dividende", filter: "Dividende" },
+  { label: "ETF Obligataire", filter: "Obligataire" }
+];
+
+export default function ETFSearcher({ onSelectETF }) {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [results, setResults] = React.useState([]);
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState({ notFound: false, input: false, server: false });
+  const [searchMetrics, setSearchMetrics] = useState({ time: 0, keywords: [] });
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
-  const handleSearch = () => {
-    setInputError(false);
-    setNotFound(false);
-    
-    const term = searchTerm.trim();
-    if (!term) {
+  const handleNavigation = (path) => {
+    handleMenuClose();
+    navigate(path);
+  };
+
+  // Recherche avec mémoïsation
+  const performSearch = useCallback(async (term) => {
+    if (!term.trim()) {
       setResults([]);
-      setInputError(true);
+      setError(prev => ({ ...prev, notFound: false }));
       return;
     }
 
-    const searchTermLower = term.toLowerCase();
-    
+    setIsLoading(true);
+    const startTime = performance.now();
+
     try {
+      // Analyse sémantique de la requête
+      const { keywords, intent } = analyzeUserQuery(term);
+      setSearchMetrics(prev => ({ ...prev, keywords }));
+
+      // Filtrage avancé basé sur l'analyse
       const matches = etfs.filter(etf => {
-        if (!isValidETF(etf)) return false;
+        if (!validateETF(etf)) return false;
         
-        return (
-          etf.name.toLowerCase().includes(searchTermLower) ||
-          (etf.symbol && etf.symbol.toLowerCase().includes(searchTermLower)) ||
-          (etf.isin && etf.isin.toLowerCase().includes(searchTermLower))
+        const matchesKeywords = keywords.some(keyword => 
+          etf.name.toLowerCase().includes(keyword) ||
+          (etf.description && etf.description.toLowerCase().includes(keyword)) ||
+          (etf.category && etf.category.toLowerCase().includes(keyword))
         );
+
+        const matchesIntent = intent === 'all' || 
+          (etf.tags && etf.tags.includes(intent));
+
+        return matchesKeywords && matchesIntent;
       });
 
       setResults(matches);
-      setNotFound(matches.length === 0);
-    } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
+      setError({
+        notFound: matches.length === 0,
+        input: false,
+        server: false
+      });
+    } catch (err) {
+      console.error('Erreur de recherche sémantique:', err);
+      setError({ notFound: true, input: false, server: true });
       setResults([]);
-      setNotFound(true);
+    } finally {
+      setSearchMetrics(prev => ({
+        ...prev,
+        time: performance.now() - startTime
+      }));
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Gestion des recherches avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm.trim()) {
+        performSearch(searchTerm);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, performSearch]);
 
   const handleSelect = (etf) => {
-    if (!isValidETF(etf)) {
+    if (!validateETF(etf)) {
       console.error('ETF invalide sélectionné:', etf);
       return;
     }
     
-    if (typeof onSelectETF === 'function') {
-      onSelectETF(etf.name);
-    } else {
-      console.error('onSelectETF n\'est pas une fonction');
-    }
+    onSelectETF?.(etf);
   };
 
-  const popularSuggestions = [
-    { label: "ETF Tech", filter: "Technologie" },
-    { label: "ETF ESG", filter: "ESG" },
-    { label: "ETF Europe", filter: "Europe" }
-  ];
-
-  // Reset des résultats quand le terme de recherche est vide
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setResults([]);
-      setNotFound(false);
-    }
-  }, [searchTerm]);
+  const handleSuggestionClick = (filter) => {
+    setSearchTerm(filter);
+  };
 
   return (
     <Paper elevation={3} sx={{ p: 3, position: 'relative' }}>
-      <Typography variant="h5" sx={{ mb: 2, color: 'secondary.main' }}>
-        🔍 Recherche Avancée
+     <Button onClick={() => handleNavigation('/etfai')}>
+       <Typography variant="h5" sx={{ mb: 2, color: 'secondary.main' }}>
+        🔍 Recherche Sémantique : ETF.ai
       </Typography>
+     </Button>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
+          multiline
+          minRows={2}
           fullWidth
           variant="outlined"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Rechercher par nom, ISIN ou symbole..."
-          error={inputError}
-          helperText={inputError ? "Veuillez entrer un terme de recherche" : ""}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setError(prev => ({ ...prev, input: false }));
+          }}
+          onKeyDown={(e) => e.key === 'Enter' && performSearch(searchTerm)}
+          placeholder="etf technologie avec frais <0.5%, rendement >3% "
+          error={error.input}
+          helperText={error.input ? "Veuillez entrer une requête valide" : ""}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon color={inputError ? "error" : "action"} />
+                <SearchIcon color={error.input ? "error" : "action"} />
               </InputAdornment>
             ),
           }}
@@ -110,32 +150,52 @@ export default function ETFSearcher({ onSelectETF }) {
         <Button
           variant="contained"
           size="large"
-          onClick={handleSearch}
+          onClick={() => performSearch(searchTerm)}
           sx={{ px: 4 }}
-          disabled={!searchTerm.trim()}
+          disabled={!searchTerm.trim() || isLoading}
         >
-          Rechercher
+          {isLoading ? <CircularProgress size={24} /> : "Rechercher"}
         </Button>
       </Box>
 
-      {inputError && (
+      {error.input && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Veuillez entrer un terme de recherche valide
+          Veuillez saisir une requête de recherche valide
         </Alert>
       )}
 
-      {results.length > 0 && (
+      {error.server && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Erreur lors de l'analyse sémantique. Veuillez réessayer.
+        </Alert>
+      )}
+
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!isLoading && results.length > 0 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            {results.length} résultat(s) trouvé(s)
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="subtitle1">
+              {results.length} résultat(s) trouvé(s)
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Analyse en {searchMetrics.time.toFixed(0)}ms • 
+              Mots-clés: {searchMetrics.keywords.join(', ')}
+            </Typography>
+          </Box>
+          
           <TableContainer component={Paper}>
             <Table sx={{ minWidth: 650 }} aria-label="table des résultats">
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Nom</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Symbole</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>ISIN</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Catégorie</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Frais</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Performance</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -144,16 +204,17 @@ export default function ETFSearcher({ onSelectETF }) {
                     key={etf.isin || etf.name}
                     hover
                     onClick={() => handleSelect(etf)}
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:last-child td, &:last-child th': { border: 0 }
-                    }}
+                    sx={{ cursor: 'pointer' }}
                   >
-                    <TableCell component="th" scope="row">
-                      {etf.name}
+                    <TableCell>
+                      <Typography fontWeight="bold">{etf.name}</Typography>
+                      <Typography variant="caption">{etf.isin}</Typography>
                     </TableCell>
-                    <TableCell>{etf.symbol || '-'}</TableCell>
-                    <TableCell>{etf.isin || '-'}</TableCell>
+                    <TableCell>{etf.category || '-'}</TableCell>
+                    <TableCell>{etf.fees ? `${etf.fees}%` : '-'}</TableCell>
+                    <TableCell>
+                      {etf.performance ? `${etf.performance}%` : '-'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -162,33 +223,26 @@ export default function ETFSearcher({ onSelectETF }) {
         </Box>
       )}
 
-      {notFound && (
+      {error.notFound && !isLoading && (
         <Alert severity="info" sx={{ mt: 2 }}>
-          Aucun ETF trouvé pour "{searchTerm}"
+          Aucun ETF ne correspond à "{searchTerm}". Essayez avec d'autres termes.
         </Alert>
       )}
 
       <Box sx={{ mt: 3 }}>
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-          Suggestions rapides :
+          Suggestions populaires :
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {popularSuggestions.map((suggestion) => (
+          {POPULAR_SUGGESTIONS.map((suggestion) => (
             <Chip 
               key={suggestion.label}
               icon={<TrendingUpIcon fontSize="small" />}
               label={suggestion.label}
               clickable
               variant="outlined"
-              onClick={() => {
-                setSearchTerm(suggestion.filter);
-                // Déclenche la recherche après un court délai
-                setTimeout(handleSearch, 100);
-              }}
-              sx={{ 
-                borderRadius: 1,
-                '&:hover': { backgroundColor: 'action.hover' }
-              }}
+              onClick={() => handleSuggestionClick(suggestion.filter)}
+              sx={{ borderRadius: 1 }}
             />
           ))}
         </Box>

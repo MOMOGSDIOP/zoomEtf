@@ -15,7 +15,7 @@ export default function UserPortfolioTransaction({ type, onBack, onSelectETF }) 
         mb: 2
       }}>
         <Typography variant="h4">Historique des transactions</Typography>
-        <Button variant="outlined" onClick={onBack}>Retour</Button>
+        <Button variant="outlined"  onClick={() => navigate('/userportfolio')}>Retour</Button>
       </Box>
 
       <Paper sx={{ padding: 3, mb: 2 }}>

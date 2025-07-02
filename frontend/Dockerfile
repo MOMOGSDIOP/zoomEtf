@@ -1,17 +1,13 @@
-FROM node:18 AS build
+# Dockerfile.dev (nom suggéré pour dev uniquement)
+FROM node:18
 
-WORKDIR /frontend
+WORKDIR /app
 
-COPY ./package.json ./package-lock.json ./
-
+COPY frontend/package*.json ./
 RUN npm install
 
-COPY . .
+COPY frontend/ ./
 
-RUN npm run build
+EXPOSE 5173
 
-FROM nginx:alpine
-
-COPY --from=build /frontend/build /usr/share/nginx/html
-
-EXPOSE 80
+CMD ["npm", "run", "start"]

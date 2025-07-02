@@ -1,17 +1,26 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ETFFilters from './ETFFilters';
 import ETFTable from './ETFTable';
 import etfs from '../data/etfs';
 import '../styles/ETFFilters.css';
+import '../styles/ETFTable.css';
+import '../styles/ETFFiltersManager.css';
+import NoterETFAvanced from '../utils/NoterETFAdvanced';
 
 export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useState({
     region: '',
     type: '',
     replication: '',
     sector: '',
     availability: '',
+    risk: '',
+    strategy: ''
   });
+
   const [appliedFilters, setAppliedFilters] = useState(filters);
   const [sortKey, setSortKey] = useState('performance');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -26,20 +35,17 @@ export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
   };
 
   const resetFilters = () => {
-    setFilters({
+    const resetState = {
       region: '',
       type: '',
       replication: '',
       sector: '',
       availability: '',
-    });
-    setAppliedFilters({
-      region: '',
-      type: '',
-      replication: '',
-      sector: '',
-      availability: '',
-    });
+      risk: '',
+      strategy: ''
+    };
+    setFilters(resetState);
+    setAppliedFilters(resetState);
   };
 
   const applyFilters = () => {
@@ -49,27 +55,20 @@ export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
   const filteredEtfs = useMemo(() => {
     return etfs
       .filter((e) => {
-        const { region, type, replication, sector, availability } = appliedFilters;
+        const { region, type, replication, sector, availability, risk, strategy } = appliedFilters;
 
-        // Filtre region & availability combiné selon logique précise
         if (availability && availability !== '') {
           if (availability === 'Partout') {
-            // Seulement les ETFs disponibles partout
             if (e.availability !== 'Partout') return false;
           } else {
-            // Filtre sur une région précise
-            // On garde ceux disponibles dans la région OU partout
             if (e.availability !== availability && e.availability !== 'Partout') return false;
           }
         }
 
         if (region && region !== '') {
-          // On veut un filtre region strict si renseigné
-          // Pour éviter conflit avec availability, on filtre ici sur region si disponible
           if (e.region !== region) return false;
         }
 
-        // Autres filtres classiques
         if (type && type !== '') {
           if (e.type !== type) return false;
         }
@@ -80,6 +79,14 @@ export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
 
         if (sector && sector !== '') {
           if (sector !== 'Tous secteurs' && e.sector !== sector) return false;
+        }
+
+        if (risk && risk !== '') {
+          if (e.risk !== risk) return false;
+        }
+
+        if (strategy && strategy !== '') {
+          if (!e.strategies?.includes(strategy)) return false;
         }
 
         return true;
@@ -98,22 +105,48 @@ export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
   }, [appliedFilters, sortKey, sortOrder]);
 
   return (
-    <>
-      <ETFFilters
-        filters={filters}
-        setFilters={setFilters}
-        onReset={resetFilters}
-        onApply={applyFilters}
-        onChangeSort={onChangeSort}
-        sortKey={sortKey}
-        sortOrder={sortOrder}
-      />
-      <ETFTable
-        etfs={filteredEtfs}
-        sortKey={sortKey}
-        sortOrder={sortOrder}
-        onSelectETF={onSelectETF} 
-      />
-    </>
+    <div className="etf-manager-wrapper">
+      <div className="etf-manager-container">
+        {/* Colonne Filtres */}
+        <div className="filters-column">
+          <div className="filters-header-bar">
+            <h3>Filtres ETF</h3>
+            <button
+              className="btn-advanced-filters"
+              onClick={() => navigate('/filtres-advanced')}
+              aria-label="Accéder aux filtres avancés"
+            >
+              Filtres avancés
+            </button>
+          </div>
+          <ETFFilters
+            filters={filters}
+            setFilters={setFilters}
+            onReset={resetFilters}
+            onApply={applyFilters}
+            onChangeSort={onChangeSort}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+          />
+        </div>
+
+        {/* Colonne Tableau */}
+        <div className="table-column">
+  <div className="table-header-bar">
+    <h3>Liste des ETFs filtrés</h3>
+  </div>
+  <div className="etf-table-wrapper">
+    <ETFTable
+      etfs={filteredEtfs}
+      sortKey={sortKey}
+      sortOrder={sortOrder}
+      onSelectETF={onSelectETF}
+    />
+  </div>
+  
+</div>
+
+      </div>
+    </div>
   );
 }

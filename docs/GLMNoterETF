@@ -1,0 +1,50 @@
+# 📊 Notation ETF avec un modèle GLM (Generalized Linear Model)
+
+### 🔍 Objectif :
+Attribuer une **note globale (AAA à B)** à chaque ETF en se basant sur un **modèle mathématique puissant** plutôt qu’un système de pondération arbitraire.
+
+---
+
+## ⚙️ Qu'est-ce qu'un GLM ?
+
+Un GLM (modèle linéaire généralisé) prédit une **valeur cible** (score global) à partir d’un **ensemble de caractéristiques** transformées (features) :
+
+\[
+\text{score} = \beta_0 + \beta_1 \cdot x_1 + \beta_2 \cdot x_2 + \dots + \beta_n \cdot x_n
+\]
+
+Chaque `β` est un **coefficient appris** via des données historiques et statistiques.  
+On applique ensuite des seuils pour convertir ce score en **notation de crédit** : `AAA`, `AA`, `A`, etc.
+
+---
+
+## 🧩 Variables utilisées
+
+| Variable           | Sens               | Transformation           |
+|--------------------|--------------------|---------------------------|
+| Performance (%)    | Plus c'est haut    | Normalisation            |
+| Volatilité (%)     | Moins c'est haut   | Inverse normalisation    |
+| TER (frais %)      | Moins c'est haut   | Inverse normalisation    |
+| Dividendes (%)     | Plus c'est haut    | Normalisation            |
+| Ancienneté (années)| Plus c'est vieux   | Ratio / 30 ans max       |
+| Volume (€/jour)    | Plus c'est liquide | Ratio / 5M max           |
+
+---
+
+## 🧠 Formule finale
+
+Une fois les valeurs normalisées, le modèle GLM applique :
+
+\[
+\text{score} = \beta_0 + \sum_{i=1}^{n} \beta_i \cdot \text{feature}_i
+\]
+
+Puis ce score est converti en **notation** :
+- > 90 : `AAA`
+- > 80 : `AA`
+- > 70 : `A`
+- > 60 : `BBB`
+- > 50 : `BB`
+- sinon : `B`
+
+---

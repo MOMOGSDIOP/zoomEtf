@@ -2,10 +2,13 @@
 Point d'entrée principal de l'API ZoomETF
 """
 
-
 from fastapi import FastAPI
-from app.api.endpoints import etfs
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.endpoints import etfs, auth
 from prometheus_fastapi_instrumentator import Instrumentator
+from app.db.session import engine  # ton engine SQLAlchemy
+from app.db.base_class import Base  # ta base SQLAlchemy où sont définis les modèles
+
 
 app = FastAPI(
     title="ZoomETF API",
@@ -13,9 +16,18 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# Configuration CORS (à adapter en prod pour limiter l'origine)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Routage
 app.include_router(etfs.router)
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 @app.get("/health")
 async def health_check():
@@ -29,3 +41,4 @@ def root():
 
 # Active les métriques Prometheus
 Instrumentator().instrument(app).expose(app)
+
