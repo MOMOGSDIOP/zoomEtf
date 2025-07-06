@@ -15,7 +15,7 @@ export default function ETFFiltersManager({ type, onBack, onSelectETF }) {
     region: '',
     type: '',
     replication: '',
-    sector: '',
+    sector: '',                                                    
     availability: '',
     risk: '',
     strategy: ''

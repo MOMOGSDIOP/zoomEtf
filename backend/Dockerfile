@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install starlette-prometheus
+
 # 2. Installer les packages ML de base
 RUN pip install --no-cache-dir --timeout 100 \
     torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu

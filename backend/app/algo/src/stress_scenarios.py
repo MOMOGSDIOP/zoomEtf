@@ -2,6 +2,11 @@
 Scénarios de stress test pour les ETFs
 """
 
+from typing import List, Dict
+import numpy as np  # <- aussi nécessaire pour np.mean etc.
+import logging    
+
+
 class ETFStressTester:
     def __init__(self, scenarios: List[Dict]):
         self.scenarios = self._load_scenarios(scenarios)

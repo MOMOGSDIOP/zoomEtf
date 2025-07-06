@@ -1,6 +1,11 @@
+# Environnements virtuels Python
+venv/
+.venv/
+env/
+
 # Fichiers générés par Docker
-**/docker-compose.override.yml
-**/.dockerignore
+/docker-compose.override.yml
+/.dockerignore
 
 # Fichiers de configuration locale
 .env

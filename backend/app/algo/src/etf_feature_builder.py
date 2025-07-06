@@ -5,8 +5,10 @@ from config import REQUIRED_COLUMNS
 
 
 class ETFFeatureBuilder:
-    def __init__(self):
-        self.required_columns = config.get('REQUIRED_COLUMNS', REQUIRED_COLUMNS)
+    def __init__(self, config=None):
+        self.config = config or {}
+        self.required_columns = self.config.get('REQUIRED_COLUMNS', REQUIRED_COLUMNS)
+        self.risk_params = self.config.get('RISK_PARAMETERS', {})
 
     def transform(self, etf_data: pd.DataFrame) -> pd.DataFrame:
         """Transforme les données brutes d'ETFs en features prêtes pour le modèle"""

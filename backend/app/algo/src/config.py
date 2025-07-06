@@ -29,7 +29,7 @@ VALIDATION_THRESHOLDS = {
 
 # Configuration du modèle
 MODEL_CONFIG = {
-    'input_dim': 24,  # Doit correspondre au nombre exact de features générées
+    'input_dim': 25,  # Doit correspondre au nombre exact de features générées
     'hidden_layers': [256, 128, 64],  # Réduit pour s'adapter à la dimension d'entrée
     'learning_rate': 1e-4,
     'dropout_rate': 0.3,
@@ -99,3 +99,6 @@ REQUIRED_COLUMNS = [
 VALIDATION_THRESHOLDS = {
     'required_fields': REQUIRED_COLUMNS,
 }
+
+USE_ALTERNATIVE_DATA: True
+USE_TEMPORAL_FEATURES: True

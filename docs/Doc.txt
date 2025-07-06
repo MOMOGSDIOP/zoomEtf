@@ -1,205 +1,4 @@
-8# 📘 Zoom ETF – Récapitulatif du Projet
-
-## 🧭 Contexte et Introduction
-
-**Zoom ETF** est une application web destinée à la visualisation, la recherche et la gestion d’Exchange-Traded Funds (ETF). Le projet repose sur une architecture conteneurisée multi-services orchestrée avec **Docker Compose**, combinant un backend en **FastAPI**, un frontend en **ReactJS**, une couche de **monitoring avec Prometheus et Grafana**, ainsi que des services complémentaires comme **Redis** et **Elasticsearch**.
-
-L’objectif principal est de fournir une interface interactive pour explorer les ETFs via une interface utilisateur riche et des APIs performantes. L'extraction de données se fait via des services dédiés (Yahoo Finance, JustETF), et le projet est structuré autour de bonnes pratiques de modularité, documentation et tests.
-
----
-
-## 📁 Arborescence du Projet
-
-```
-zoom-etf/
-├── backend/
-│   ├── alembic/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── core/
-│   │   │   ├── database.py
-│   │   │   ├── init_db.py
-│   │   │   ├── security.py
-│   │   │   └── settings.py
-│   │   ├── services/
-│   │   │   ├── yahoo.py
-│   │   │   ├── justetf_scraper.py
-│   │   │   ├── data_sync.py              # Nouveau
-│   │   │   ├── email_sender.py           # Nouveau
-│   │   │   └── user_service.py           # Nouveau
-│   │   ├── utils/
-│   │   │   ├── cache.py
-│   │   │   ├── logger.py
-│   │   │   └── email.py                  # Nouveau
-│   │   ├── api/
-│   │   │   ├── endpoints/
-│   │   │   │   ├── etfs.py
-│   │   │   │   ├── admin.py
-│   │   │   │   └── auth.py               # Nouveau
-│   │   ├── db/                           # Maintenant sous app/
-│   │   │   ├── database.py               # Nouveau
-│   │   │   ├── session.py                # Nouveau
-│   │   │   ├── models.py                 # Nouveau
-│   │   │   ├── user_service.py           # Nouveau
-│   │   │   └── migrations/               # Nouveau
-│   │   ├── models/                       # Maintenant sous app/
-│   │   │   ├── ETF.py                    # Nouveau
-│   │   │   ├── ETFHistory.py             # Nouveau
-│   │   │   ├── User.py                   # Nouveau
-│   │   │   └── user_auth.py              # Nouveau
-│   │   ├── schemas/                      # Maintenant sous app/
-│   │   │   └── auth.py                   # Nouveau
-│   │   ├── tests/
-│   │   │   ├── test_yahoo.py
-│   │   │   └── test_scraper.py
-│   ├── Dockerfile
-│   ├── .env
-│   ├── .dockerignore
-│   ├── requirements.txt
-│   ├── alembic.ini
-│   └── start.sh
-│
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── ETFChart.js
-│       │   ├── ETFFilters.js
-│       │   ├── ETFFiltersManager.js
-│       │   ├── ETFList.js
-│       │   ├── ETFListFull.js             # Nouveau
-│       │   ├── ETFSearcher.js
-│       │   ├── ETFTable.js
-│       │   ├── UserPortfolio.js
-│       │   ├── ETFIdentity.js             # Nouveau
-│       │   ├── etfidentity/               # Nouveau dossier
-│       │   │   ├── ETFExchange.js
-│       │   │   ├── ETFGeneralInfo.js
-│       │   │   ├── ETFLegalStructure.js
-│       │   │   ├── ETFPositions.js
-│       │   │   └── ETFRiskChart.js
-│       │   ├── quadrants/
-│       │   │   ├── BottomLeftQuadrant.js
-│       │   │   ├── BottomRightQuadrant.js
-│       │   │   ├── TopLeftQuadrant.js
-│       │   │   └── TopRightQuadrants.js
-│       │   └── userportfolio/
-│       │       ├── UserPortfolioAnalysis.js
-│       │       ├── UserPortfolioConseils.js
-│       │       ├── UserPortfolioDividendes.js
-│       │       ├── UserPortfolioExport.js
-│       │       ├── UserPortfolioList.js
-│       │       ├── UserPortfolioPerformance.js
-│       │       ├── UserPortfolioRebalancement.js
-│       │       ├── UserPortfolioAlert.js
-│       │       └── UserPortfolioTransaction.js
-│       ├── data/
-│       │   ├── countries.js
-│       │   └── etfs.js
-│       ├── pages/
-│       │   └── Dashboard.js
-│       ├── styles/
-│       │   ├── ETFFilters.css
-│       │   ├── ETFTable.css
-│       │   ├── Global.css
-│       │   ├── GridLayout.css
-│       │   ├── MediaQueries.css
-│       │   ├── ETFidentity.css
-│       │   ├── UserPortfolio.css
-│       │   ├── UserPortfolioFeature.css
-│       │   └── Theme.js
-│       ├── utils/
-│       │   └── export.js
-│       ├── App.js
-│       ├── index.css
-│       ├── index.js
-│       ├── Dockerfile
-│       ├── package.json
-│       └── package-lock.json
-│
-├── monitoring/
-│   ├── prometheus.yml
-│   └── grafana/
-│
-├── docker-compose.yml
-├── README.md
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── DECISIONS.md
-    └── API.md
-
-
-
-```
-
----
-
-## ⚙️ Composants et Technologies
-
-| Composant      | Technologie        | Description                                               |
-|----------------|--------------------|-----------------------------------------------------------|
-| Backend        | FastAPI (Python)   | API principale, scrapers ETF, logique métier              |
-| Frontend       | ReactJS            | Interface utilisateur pour explorer et visualiser les ETFs |
-| Cache          | Redis              | Mise en cache des données pour améliorer les performances |
-| Search         | Elasticsearch      | Recherche avancée sur les données ETF                     |
-| Monitoring     | Prometheus, Grafana| Collecte et visualisation des métriques système/services  |
-| Orchestration  | Docker Compose     | Gestion multi-conteneurs du projet                        |
-| Documentation  | Markdown, Swagger  | Documentation technique, architecture, endpoints API      |
-| Tests          | Pytest             | Tests unitaires sur les scrapers backend                  |
-
----
-
-## 🔌 Fonctionnalités Implémentées
-
-- Récupération des données ETF depuis Yahoo et JustETF via des modules dédiés.
-- API REST exposant des routes liées aux ETFs (`etfs.py`) et à l’administration (`admin.py`).
-- Interface utilisateur avec composants React pour afficher, filtrer et rechercher des ETFs.
-- Système de cache via Redis pour améliorer la réactivité de l’API.
-- Monitoring de l’infrastructure via Prometheus (configurée) et dashboards Grafana.
-- Tests unitaires présents pour les scrapers (`test_yahoo.py`, `test_scraper.py`).
-- Documentation structurée dans `docs/` avec diagrammes, journal de décisions et Swagger.
-
----
-
-## 🔮 Prochaines Étapes Possibles
-
-### 🖥️ Backend
-
-- **Connexion à une base de données** (ex: PostgreSQL) pour gérer des portefeuilles utilisateurs persistants.
-- **Authentification utilisateur** (JWT, OAuth2) pour différencier les accès (admin/utilisateur).
-- **Tâches de fond** (ex: via Celery ou APScheduler) pour automatiser la mise à jour des données.
-
-### 💡 Frontend
-
-- Ajout d’un **système d’authentification** (formulaire login/signup).
-- Création d’un **tableau de bord utilisateur personnalisé**.
-- Amélioration des **visualisations graphiques** (ex: intégration de bibliothèques comme Chart.js).
-
-### 📈 Observabilité
-
-- Configuration de **dashboards Grafana personnalisés** pour suivre l’état de l’API et des scrapers.
-- Ajout de **règles d’alerte** Prometheus (erreurs fréquentes, temps de réponse élevés).
-
-### ✅ Qualité & CI/CD
-
-- Étendre la couverture de tests aux endpoints REST et à la logique métier.
-- Mise en place d’un pipeline CI/CD (ex: GitHub Actions) pour automatiser les tests et les builds.
-- Analyse statique de code avec des outils comme Flake8, Black (backend) ou ESLint (frontend).
-
----
-
-## 📝 Documentation Disponible
-
-- `ARCHITECTURE.md` : Schéma Mermaid de l’architecture technique.
-- `DECISIONS.md` : Journal des décisions techniques prises.
-- `API.md` : Documentation Swagger des endpoints REST exposés.
-
----
-
-## ✅ Conclusion
-
-Le projet **Zoom ETF** repose sur une base solide et bien structurée, combinant des technologies modernes pour le développement web, l’extraction de données, la visualisation et l’observabilité. Grâce à sa modularité et à l’utilisation de standards reconnus, il est prêt à accueillir de nouvelles fonctionnalités plus complexes telles que la personnalisation utilisateur, la persistance de données ou encore l’enrichissement des visualisations.
-# 🧾 Fiche de Poste – Assistant Ingénieur Front-End
+# 🧾 Fiche de Poste – Assistant Ingénieur Back-End
 
 **Intitulé du poste :** Assistant Ingénieur Backend
 **Localisation :** [Ville / Télétravail]  
@@ -235,3 +34,81 @@ Le projet **Zoom ETF** repose sur une base solide et bien structurée, combinant
 - Première expérience ou projet significatif en développement front-end.  
 - Autonomie, rigueur, sens du détail.  
 - Bonne communication et esprit d’équipe.
+
+
+
+Contexte
+
+Nous recherchons un Ingénieur Senior spécialisé en intelligence artificielle backend pour développer et optimiser notre assistant intelligent. Vous intégrerez une équipe R&D dynamique afin de concevoir des systèmes backend robustes, évolutifs et intelligents, capables de comprendre et d’interagir efficacement avec les utilisateurs.
+Missions principales
+
+    Concevoir, développer et maintenir les architectures backend des services d’IA pour un assistant intelligent.
+
+    Implémenter des algorithmes de traitement du langage naturel (NLP), compréhension du langage, machine learning et deep learning.
+
+    Assurer l’intégration des modèles AI dans un environnement backend scalable et sécurisé.
+
+    Optimiser les performances des systèmes backend (temps de réponse, gestion de la charge, disponibilité).
+
+    Collaborer étroitement avec les équipes frontend, produit et data science pour aligner les solutions techniques sur les besoins utilisateurs.
+
+    Participer à la définition des meilleures pratiques de développement, déploiement et monitoring des modèles AI.
+
+    Veiller à la qualité, la sécurité et la robustesse des solutions développées.
+
+    Rester à jour sur les avancées technologiques en IA et backend pour proposer des innovations pertinentes.
+
+Profil recherché
+
+    Diplôme d’ingénieur ou équivalent en informatique, intelligence artificielle, ou domaines similaires.
+
+    Minimum 5 ans d’expérience en développement backend, idéalement dans des projets liés à l’intelligence artificielle ou assistants intelligents.
+
+    Maîtrise des langages backend : Python, Java, Go, ou équivalent.
+
+    Solide expérience en machine learning, NLP, frameworks AI (TensorFlow, PyTorch, Hugging Face, etc.).
+
+    Connaissance approfondie des architectures backend : API REST/GraphQL, microservices, bases de données NoSQL/SQL.
+
+    Maîtrise des outils de déploiement et orchestration (Docker, Kubernetes).
+
+    Compétences en gestion de la performance et optimisation backend.
+
+    Bonne connaissance des pratiques de sécurité informatique appliquées aux systèmes backend.
+
+    Capacité à travailler en équipe, autonomie, rigueur et sens de l’innovation.
+
+    Anglais professionnel souhaité.
+
+Atouts
+
+    Expérience avec les assistants vocaux ou chatbots.
+
+    Connaissance des plateformes cloud (AWS, GCP, Azure).
+
+    Contribution à des projets open-source liés à l’IA.
+
+    Sensibilité UX et compréhension des enjeux utilisateurs.
+
+Pourquoi nous rejoindre ?
+
+    Projet innovant avec un fort impact utilisateur.
+
+    Environnement de travail stimulant et collaboratif.
+
+    Opportunités d’évolution et formation continue.
+
+    Flexibilité (télétravail possible).
+
+JE TE DONNE A TOI LE POSTE EST CE QUE TU VEUX 
+
+Avant de commencer voici le document de partenariat à lire , signer et respecter tout au long de notre partenariat sur ce projet
+
+
+1. il faut jamais écrire de code sans que je te donne l'autorisation
+
+2. Pour chaque travail demandé, je vais te donner un ticket bien fourni et détaillé et tu as l'obligation de respecter à la lettre mes instructions
+
+3. Je veux un travail sérieux,rigoureux et une précision chirurgicale je veux pas de conneries de supposition dans la programmation si t'as un doute ou des questions fais le savoir mais essaye pas de me duper et de raconter des connneries 
+
+Signe cet acte d'engagement

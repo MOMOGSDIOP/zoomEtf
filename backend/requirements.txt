@@ -55,3 +55,5 @@ pytest-cov==4.1.0
 python-multipart==0.0.6
 loguru==0.7.2
 tqdm==4.66.0
+
+yfinance==0.2.25

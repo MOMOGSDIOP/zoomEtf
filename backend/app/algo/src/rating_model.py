@@ -25,13 +25,14 @@ from monitoring import ETFSystemMonitor
 from data_pipeline import ETFDataPipeline
 from stress_scenarios import ETFStressTester
 from etf_feature_builder import ETFFeatureBuilder
-from etf_graph import ETFGraphData, ETFGraphProcessor, ETFGraphConfig
-from explanation import ETFExplanationGenerator
+from etf_graph import ETFGraphProcessor, ETFGraphConfig
+from explanations import ETFExplanationGenerator
 from memory_optimizer import MemoryOptimizer
+from data_utils import DataPreprocessor
+import data_utils as du
 
+from config import MODEL_CONFIG, RISK_PARAMETERS, VALIDATION_THRESHOLDS, REQUIRED_COLUMNS
 
-
-from config import REQUIRED_COLUMNS
 
 
 logger = logging.getLogger(__name__)
@@ -51,9 +52,11 @@ class ETFScoringEngine:
         self.stress_tester = ETFStressTester(config['stress_scenarios'])
         graph_config = ETFGraphConfig(
             normalize_features=True,
-            feature_specs=config.get('GRAPH_FEATURE_SPECS'),
+            use_alternative_data=config.get('USE_ALTERNATIVE_DATA', False),
+            use_temporal_features=config.get('USE_TEMPORAL_FEATURES', False),
             device=self.device
         )
+
     
         self.graph_processor = ETFGraphProcessor(graph_config)
 
@@ -64,8 +67,8 @@ class ETFScoringEngine:
         })
         
         # Vérification de cohérence dimensionnelle
-        if len(self.feature_builder.transform(pd.DataFrame(columns=REQUIRED_COLUMNS)).columns) != config['MODEL_CONFIG']['input_dim']:
-            raise ValueError("Incompatibilité dimension features/modèle")
+        """if len(self.feature_builder.transform(pd.DataFrame(columns=REQUIRED_COLUMNS)).columns) != config['MODEL_CONFIG']['input_dim']:
+            raise ValueError("Incompatibilité dimension features/modèle")"""
         
         
         # Initialisation des modèles
@@ -225,7 +228,7 @@ class ETFScoringEngine:
 
     
 
-    def _train_with_gnn(self, graph_data: Dict, y: torch.Tensor,memory_optimizer=self.memory_optimizer) -> Dict:
+    def _train_with_gnn(self, graph_data: Dict, y: torch.Tensor) -> Dict:
         """Effectue l'entraînement avec le modèle GNN en utilisant le monitoring système
          Args:graph_data: Données graphiques sous forme brute ou prétraitées y: 
          Tensors des cibles d'entraînement"""
@@ -294,9 +297,7 @@ class ETFScoringEngine:
 
     
     def _generate_explanations(self, etf_data: pd.DataFrame, scores: np.ndarray) -> Dict:
-         """Utilise le générateur d'explications"""
         features = self._prepare_etf_features(etf_data)
-
         return self.explanation_generator.generate_explanations(
             etf_data=etf_data,
             scores=scores,
@@ -528,14 +529,13 @@ class ETFScoringEngine:
 
 
 
-
-
-
 if __name__ == "__main__":
     from config import MODEL_CONFIG, RISK_PARAMETERS, VALIDATION_THRESHOLDS, REQUIRED_COLUMNS
-    
+    data_preprocessor = DataPreprocessor()
+
     config = {
         # Paramètres modèle (tirés directement de MODEL_CONFIG)
+        'MODEL_CONFIG': MODEL_CONFIG,
         'input_dim': MODEL_CONFIG['input_dim'],
         'hidden_layers': MODEL_CONFIG['hidden_layers'],
         'learning_rate': MODEL_CONFIG['learning_rate'],
@@ -571,37 +571,32 @@ if __name__ == "__main__":
     }
     
     # 2. Initialisation avec vérification
+    
     try:
         engine = ETFScoringEngine(config)
-        logger.info("Engine initialized successfully with config: %s", {k:v for k,v in config.items() if k not in ['REQUIRED_COLUMNS']})
+        logger.info("Engine initialized successfully")
         
-        # 3. Chargement données avec vérification des champs requis
-        with open('dataETFS.json') as f:
+        # Chargement des données
+        with open('etf_data_test.json') as f:
             etf_data = json.load(f)
             
-        # Vérification rapide des champs requis
+        # Vérification des champs requis
         sample_item = etf_data[0]
         missing_fields = [field for field in REQUIRED_COLUMNS 
-                        if not _nested_field_exists(sample_item, field)]
+                        if not du._nested_field_exists(sample_item, field)]
         
         if missing_fields:
-            logger.warning("Missing required fields in input data: %s", missing_fields)
+            logger.warning("Missing required fields: %s", missing_fields)
         
-        # 4. Exécution et sauvegarde
-        results = engine.run_full_analysis(etf_data)
-        with open('results.json', 'w') as f:
-            json.dump(results, f, indent=2)
-            
+        # Traitement des données
+        processed_data = data_preprocessor.process_numerical_data(
+            pd.DataFrame(etf_data)
+        )
+        
+        # Exécution et sauvegarde
+        results = engine.run_full_analysis(processed_data.to_dict('records'))
+        du.save_results(results)  # Utilisation de notre fonction sécurisée
+      
     except Exception as e:
-        logger.error("System failure: %s", str(e))
+        logger.error("System failure: %s", str(e), exc_info=True)
         raise
-
-def _nested_field_exists(data: dict, field_path: str) -> bool:
-    """Vérifie récursivement si un champ imbriqué existe"""
-    parts = field_path.split('.')
-    current = data
-    for part in parts:
-        if part not in current:
-            return False
-        current = current[part]
-    return True

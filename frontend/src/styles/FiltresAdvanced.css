@@ -1,3 +1,19 @@
+
+:root {
+  /* Palette professionnelle gris sombre */
+  --background-color: #1e2125; /* Fond principal */
+  --card-background-color:  #b0b3b8; /* Panneaux */
+  --card-background-darker: #24282d; /* Variante plus sombre */
+  --border-color: #3a4048; /* Bordures */
+  --text-color: #e4e6eb; /* Texte principal */
+  --text-secondary: #b0b3b8; /* Texte secondaire */
+  --accent-color: #4a90e2; /* Accent bleu */
+  --positive-color: #5cdb5c; /* Vert positif */
+  --negative-color: #ff6b6b; /* Rouge négatif */
+  --shadow-color: rgba(0, 0, 0, 0.25);
+}
+
+
 .filtres-advanced-wrapper {
   display: flex;
   padding: 20px;

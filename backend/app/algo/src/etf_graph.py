@@ -209,7 +209,7 @@ class ETFGraphProcessor:
                 asset_id = next((k for k, v in asset_mapping.items() if v == dst), None)
                 if asset_id:
                     holdings = etf_data[src].get('portfolio', {}).get('holdings', [])
-                    weight = next((h.get('weight', 0.0) for h in holdings if h.get('assetId') == asset_id)
+                    weight = next((h.get('weight', 0.0) for h in holdings if h.get('assetId') == asset_id))
                     weights[i] = weight
             
             # Normalisation

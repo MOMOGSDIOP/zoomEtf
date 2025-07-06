@@ -21,7 +21,7 @@ import ETFIdentityFull from './pages/ETFIdentityFull';
 import ETFSearcher from './components/ETFSearcher'; // 👈 Ajout ici
 import DashboardBis from './pages/DashboardBis';
 import EtfAI from './pages/EtfAI'; // 👈 Ajout ici
-
+import ETFViewer from './components/etf/ETFViewer';
 
 export default function App() {
   const { mode } = useTheme();
@@ -54,6 +54,7 @@ export default function App() {
         <Route path="/filtres-advanced" element={<FiltresAdvanced />} />
         <Route path="/etfai" element={<EtfAI />} />
         <Route path="/etfsearch" element={<ETFSearcher />} />
+        <Route path="/etfList" element={<ETFViewer />} />
         <Route path="/etfidentity/:name" element={<ETFIdentityFull />} />
       </Routes>
     </MuiThemeProvider>

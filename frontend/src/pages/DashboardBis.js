@@ -86,6 +86,12 @@ export default function DashboardBis() {
                 </ListItemIcon>
                 <ListItemText primary="Big Moves" />
               </MenuItem>
+              <MenuItem onClick={() => handleNavigation('/etfList')}>
+                <ListItemIcon>
+                  <TrendingUpIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Liste ETFs" />
+              </MenuItem>
               </Menu>
             </div>
             <Typography variant="h6" className="header-title">

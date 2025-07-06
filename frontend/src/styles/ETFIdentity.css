@@ -76,10 +76,10 @@ body {
 /* Info Grid */
 .etf-basic-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.10rem;
   background: #f1f5f9;
-  padding: 1rem;
+  padding: 0.25rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
 }
@@ -87,7 +87,7 @@ body {
 .etf-basic-info h6 {
   margin: 0;
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--text-color);
 }
 .etf-basic-info strong {
   color: var(--primary);
@@ -96,16 +96,16 @@ body {
 /* Section Title */
 .etf-section-title {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 900;
   margin-top: 2rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 3px;
   border-bottom: 2px solid var(--divider);
 }
 
 /* Description */
 .etf-description {
   background: #f9fafb;
-  padding: 1.5rem;
+  padding: 0.5rem;
   border-left: 4px solid var(--accent);
   border-radius: var(--radius);
   color: var(--text-light);

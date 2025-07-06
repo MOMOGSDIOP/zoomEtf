@@ -1,0 +1,115 @@
+{
+  "timestamp": "2025-07-06T15:25:58.463166",
+  "ratings": [
+    {
+      "etf_id": -0.11418529432142824,
+      "raw_score": 0.4878424406051636,
+      "rating": "D",
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": -0.9084578685373851,
+      "raw_score": 0.4847066104412079,
+      "rating": "D",
+      "strengths": "High liquidity (0.0M > 0.0M percentile)",
+      "weaknesses": "High fees (TER 133.52% > 129.25% percentile)",
+      "model_insights": "",
+      "risk_analysis": "Significant drawdown risk (-90.8%)"
+    },
+    {
+      "etf_id": -0.6045853465832371,
+      "raw_score": 0.5159504413604736,
+      "rating": "D",
+      "strengths": "No significant strengths",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": 1.3351777361189376,
+      "raw_score": 0.5018191337585449,
+      "rating": "D",
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": 5.19933758270342,
+      "raw_score": 0.5080471038818359,
+      "rating": "D",
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "Significant drawdown risk (-60.5%)"
+    },
+    {
+      "etf_id": -0.3487556955170447,
+      "raw_score": 0.5538196563720703,
+      "rating": "D",
+      "strengths": "No significant strengths",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "Significant drawdown risk (-34.9%)"
+    },
+    {
+      "etf_id": 0.11418529432142824,
+      "raw_score": NaN,
+      "rating": NaN,
+      "strengths": "No significant strengths",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": -5.199337582605575,
+      "raw_score": NaN,
+      "rating": NaN,
+      "strengths": "No significant strengths",
+      "weaknesses": "High volatility (519.9% > 127.6% percentile) | High fees (TER 519.93% > 129.25% percentile)",
+      "model_insights": "",
+      "risk_analysis": "Significant drawdown risk (-519.9%)"
+    },
+    {
+      "etf_id": 0.9084578685373853,
+      "raw_score": NaN,
+      "rating": NaN,
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "Low liquidity (-0.0M < -0.0M percentile)",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": 0.3487556955170447,
+      "raw_score": 0.4934089779853821,
+      "rating": "D",
+      "strengths": "High liquidity (0.0M > 0.0M percentile)",
+      "weaknesses": "High volatility (133.5% > 127.6% percentile)",
+      "model_insights": "",
+      "risk_analysis": "Significant drawdown risk (-133.5%)"
+    },
+    {
+      "etf_id": -1.335177736118937,
+      "raw_score": NaN,
+      "rating": NaN,
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "Low liquidity (-0.0M < -0.0M percentile)",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    },
+    {
+      "etf_id": 0.6045853465832371,
+      "raw_score": 0.5546619892120361,
+      "rating": "D",
+      "strengths": "Excellent tracking (error < 0.2%)",
+      "weaknesses": "No significant weaknesses",
+      "model_insights": "",
+      "risk_analysis": "No significant risk factors"
+    }
+  ],
+  "data_stats": {
+    "num_etfs": 12,
+    "avg_score": 
