@@ -1,0 +1,71 @@
+# Fichiers générés par Docker
+**/docker-compose.override.yml
+**/.dockerignore
+
+# Fichiers de configuration locale
+.env
+*.env.local
+.env.*.local
+
+# Fichiers de logs
+*.log
+logs/
+
+# Dossiers de dépendances et builds
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Fichiers de cache
+.cache/
+.temp/
+tmp/
+
+# Fichiers de tests et couverture
+coverage/
+*.lcov
+.nyc_output/
+
+# Fichiers spécifiques aux éditeurs
+*.sublime-workspace
+*.sublime-project
+
+# Fichiers de débogage
+debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de dépendances
+jspm_packages/
+
+# Fichiers TypeScript
+*.tsbuildinfo
+
+# Fichiers de lock alternatifs
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Fichiers de sessions
+*.session
+
+# Fichiers de dump SQL
+*.sql
+*.dump
+
+# Fichiers temporaires
+*.tmp
+*.bak
