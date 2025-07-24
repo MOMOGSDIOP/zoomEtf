@@ -4,16 +4,22 @@ Pipeline avancé de traitement des données ETFs (corrigé et optimisé)
 
 import numpy as np
 import pandas as pd
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.preprocessing import QuantileTransformer, OrdinalEncoder
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
+from scipy.stats import boxcox
+from scipy.special import inv_boxcox
+from sklearn.preprocessing import PowerTransformer
 
 
 class ETFDataPipeline:
     
     def __init__(self):
-        self.quantile_transformer = QuantileTransformer(output_distribution='normal',nquantile=10)
+        self.quantile_transformer = QuantileTransformer(
+            output_distribution='normal',
+            n_quantiles=10 )
         self.imputer = IterativeImputer(estimator=RandomForestRegressor(), random_state=42)
         self.encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
         
@@ -72,20 +78,90 @@ class ETFDataPipeline:
         
         return df
 
+
     def process_numerical_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Normalisation robuste pour toutes les colonnes numériques"""
+        """Transformation robuste avec gestion complète des cas limites"""
         self.num_cols = df.select_dtypes(include=np.number).columns.tolist()
         
-        if self.num_cols:
-            # Handle negative/zero values safely before log1p
-            df[self.num_cols] = df[self.num_cols].apply(
-            lambda col: np.log1p(col - col.min() + 1e-6) if (col <= 0).any() else np.log1p(col))
-            # Convert to float64 to avoid float32 issues later
-            df[self.num_cols] = df[self.num_cols].astype(np.float64)
-             # Apply quantile transformation
-            df[self.num_cols] = self.quantile_transformer.fit_transform(df[self.num_cols])
+        if not self.num_cols:
+            return df
+        
+        # Dictionnaire pour stocker les paramètres de transformation
+        self.transformers = {}
+        constant_cols = []
+        processed_cols = []
+        
+        for col in self.num_cols:
+            col_data = df[col].values.copy()  # Travailler directement avec un array numpy
+            
+            # 1. Gestion des valeurs manquantes et infinis
+            median_val = np.median(col_data[~np.isnan(col_data)])
+            col_data = np.where(np.isnan(col_data), median_val, col_data)
+            col_data = np.nan_to_num(col_data, nan=median_val,
+                                     posinf=np.percentile(col_data, 95),
+                                     neginf=np.percentile(col_data, 5))
+            
+            # 2. Détection des colonnes constantes ou quasi-constantes
+            unique_vals = np.unique(col_data)
+            std_dev = np.std(col_data)
+            
+            if len(unique_vals) < 2 or std_dev < 1e-8:
+                constant_cols.append(col)
+                self.transformers[col] = {'type': 'constant', 'value': col_data[0]}
+                continue
+            
+            # 3. Winsorisation (écrêtage des valeurs extrêmes)
+            q1 = np.percentile(col_data, 5)
+            q3 = np.percentile(col_data, 95)
+            col_data = np.clip(col_data, q1, q3)
+            
+
+            # 4. Transformation Yeo-Johnson (généralisation de Box-Cox)
+
+            try:
+                pt = PowerTransformer(method='yeo-johnson', standardize=False)
+                transformed = pt.fit_transform(col_data.reshape(-1, 1))
+                df[col] = transformed.flatten()
+                self.transformers[col] = {'type': 'yeo-johnson', 'transformer': pt}
+                processed_cols.append(col)
+            
+            except Exception as e:
+                # Fallback vers une transformation logarithmique sécurisée
+                min_val = np.min(col_data)
+                offset = max(0, 1 - min_val) if min_val <= 0 else 0
+                df[col] = np.log1p(col_data + offset)
+                self.transformers[col] = {'type': 'log', 'offset': offset}
+                processed_cols.append(col)
+            
+            # 5. Normalisation des colonnes non constantes
+            
+            if processed_cols:
+                # Éviter la division par zéro
+                scaler = StandardScaler()
+                df[processed_cols] = scaler.fit_transform(df[processed_cols])
+                self.scaler = scaler
+            
+            # 6. Gestion finale des colonnes constantes
+            for col in constant_cols:
+                df[col] = 0  # Valeur neutre après standardisation
+            
+            return df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Pour retrouver les valeurs originales si nécessaire"""
+        
+        if hasattr(self, 'scaler'):
+            df[self.num_cols] = self.scaler.inverse_transform(df[self.num_cols])
+        
+        for col in self.num_cols:
+            if col in self.transformers:
+                lmbda = self.transformers[col]['lambda']
+                shift = self.transformers[col]['shift']
+                # Inverse Box-Cox
+                df[col] = inv_boxcox(df[col], lmbda) - shift
         
         return df
+
 
     def add_temporal_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Ajout de variables temporelles (si présentes)"""

@@ -6,15 +6,17 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict
 import  numpy as np 
-
+import psutil
 class ETFSystemMonitor:
     def __init__(self):
         self.operations_log = []
         self.performance_metrics = {
             'data_validation': [],
             'model_inference': [],
-            'training': []
-        }
+            'training': [],
+            'training_epochs': []  
+            }
+
     
     def log_operation_start(self, operation_name: str):
         """Enregistre le début d'une opération"""
@@ -54,10 +56,12 @@ class ETFSystemMonitor:
     
     def track_performance(self, metric_name: str, value: float):
         """Enregistre une métrique de performance"""
-        self.performance_metrics[metric_name].append({
-            'timestamp': datetime.now(),
-            'value': value
-        })
+        if metric_name not in self.performance_metrics:
+            self.performance_metrics[metric_name] = []
+            self.performance_metrics[metric_name].append({
+                'timestamp': datetime.now(),
+                'value': value})
+
     
     def get_recent_metrics(self, hours: int = 24) -> Dict:
         """Récupère les métriques récentes"""
@@ -69,6 +73,7 @@ class ETFSystemMonitor:
             ]
             for metric, records in self.performance_metrics.items()
         }
+    
     
     def health_check(self) -> Dict:
         """Vérifie l'état de santé du système"""
@@ -82,3 +87,34 @@ class ETFSystemMonitor:
                 if records
             }
         }
+    
+
+    def get_memory_usage(self) -> str:
+        """Retourne l'utilisation de la mémoire du processus principal"""
+        process = psutil.Process()
+        mem_bytes = process.memory_info().rss
+        mem_mb = mem_bytes / 1024 / 1024  # Convertir en Mo
+        return f"{mem_mb:.2f} MB"
+    
+
+    def get_operation_duration(self, operation_name: str) -> float:
+        """Calcule la durée d'une opération en secondes"""
+        operation_entries = [op for op in self.operations_log 
+                           if op['operation'] == operation_name]
+        
+        if len(operation_entries) < 2:
+            return 0.0
+            
+        start_time = None
+        end_time = None
+        
+        # Trouver le premier 'started' et le dernier 'completed'/'failed'
+        for entry in operation_entries:
+            if entry['status'] == 'started':
+                start_time = entry['timestamp']
+            elif entry['status'] in ['completed', 'failed']:
+                end_time = entry['timestamp']
+        
+        if start_time and end_time:
+            return (end_time - start_time).total_seconds()
+        return 0.0

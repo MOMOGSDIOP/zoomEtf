@@ -14,6 +14,10 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import shap
 from datetime import datetime
+from torch_geometric.data import Data
+
+
+logger = logging.getLogger(__name__)
 
 
 # Import des modules internes
@@ -30,12 +34,11 @@ from explanations import ETFExplanationGenerator
 from memory_optimizer import MemoryOptimizer
 from data_utils import DataPreprocessor
 import data_utils as du
-
-from config import MODEL_CONFIG, RISK_PARAMETERS, VALIDATION_THRESHOLDS, REQUIRED_COLUMNS
-
+from etf_scoring import ETFScoring
 
 
-logger = logging.getLogger(__name__)
+
+
 
 class ETFScoringEngine:
     """Moteur de notation unifié intégrant tous les composants"""
@@ -50,26 +53,42 @@ class ETFScoringEngine:
         self.monitor = ETFSystemMonitor()
         self.data_pipeline = ETFDataPipeline()
         self.stress_tester = ETFStressTester(config['stress_scenarios'])
-        graph_config = ETFGraphConfig(
-            normalize_features=True,
-            use_alternative_data=config.get('USE_ALTERNATIVE_DATA', False),
-            use_temporal_features=config.get('USE_TEMPORAL_FEATURES', False),
-            device=self.device
-        )
+        graph_config =  ETFGraphConfig(
+            normalize_features=config['GRAPH_CONFIG']['normalize_features'],
+            use_alternative_data=config['FEATURE_FLAGS']['USE_ALTERNATIVE_DATA'],
+            use_temporal_features=config['FEATURE_FLAGS']['USE_TEMPORAL_FEATURES'],
+            etf_features=config['GRAPH_CONFIG']['etf_features'],
+            asset_features=config['GRAPH_CONFIG']['asset_features'],
+            sectors=config['GRAPH_CONFIG']['sectors'],
+            edge_attributes=config['GRAPH_CONFIG']['edge_attributes'],
+            device=self.device)
+        
 
-    
         self.graph_processor = ETFGraphProcessor(graph_config)
 
+        
         # Initialisation avec la configuration complète
         self.feature_builder = ETFFeatureBuilder({
             'RISK_PARAMETERS': config.get('RISK_PARAMETERS', {}),
             'VALIDATION_THRESHOLDS': config.get('VALIDATION_THRESHOLDS', {})
         })
         
-        # Vérification de cohérence dimensionnelle
-        """if len(self.feature_builder.transform(pd.DataFrame(columns=REQUIRED_COLUMNS)).columns) != config['MODEL_CONFIG']['input_dim']:
-            raise ValueError("Incompatibilité dimension features/modèle")"""
+        # Remplacer cette vérification :
+        if len(self.feature_builder.transform(pd.DataFrame(columns=REQUIRED_COLUMNS)).columns) != config['MODEL_CONFIG']['gnn_input_dim']:
+            raise ValueError("Incompatibilité dimension features/modèle")
         
+        # Par cette version plus informative :
+        test_df = pd.DataFrame(columns=REQUIRED_COLUMNS)
+        transformed_features = self.feature_builder.transform(test_df)
+        actual_dim = len(transformed_features.columns)
+        expected_dim = config['MODEL_CONFIG']['gnn_input_dim']
+
+        if actual_dim != expected_dim:
+            raise ValueError(
+                f"Incompatibilité dimension features/modèle. "
+                f"Attendu: {expected_dim}, Obtenu: {actual_dim}. "
+                f"Colonnes transformées: {list(transformed_features.columns)}"
+                )
         
         # Initialisation des modèles
         self._init_models()
@@ -87,16 +106,19 @@ class ETFScoringEngine:
         """Initialise les différents modèles composants"""
         # Modèle semi-supervisé principal
         self.semi_supervised_model = ETFSemiSupervisedModel(
-            self.config['input_dim']
+            input_dim=self.config['input_dim'],  # 25
+            combined_dim=self.config.get('combined_dim')  # 89
         ).to(self.device)
-        
-        # Modèle graphique (si données disponibles)
-        self.gnn_model = ETFGraphModel(
-            self.config['gnn_input_dim']
-        ).to(self.device)
-        
+        print(f"Config input_dim for semi supervised model : {self.config.get('input_dim')}")
+
         # Explicateur SHAP
         self.explainer = None
+        
+        # Initialize models
+        self.gnn_model = ETFGraphModel(
+            input_dim=self.config.get('gnn_input_dim')
+            ).to(self.device)
+        print(f"Config gnn_input_dim for etf_graph_model : {self.config.get('gnn_input_dim')}")
     
     def _init_loss_and_optim(self):
         """Initialise les fonctions de loss et optimiseurs"""
@@ -120,7 +142,7 @@ class ETFScoringEngine:
            Args:
            X: DataFrame contenant les features d'entraînement
            y: Series contenant les cibles supervisées
-           graph_data: Données graphiques optionnelles pour le GNN (format brut ou prétraité)
+           graph_data: Données graphiques optiosnnelles pour le GNN (format brut ou prétraité)
            epochs: Nombre d'époques d'entraînement (défaut: 100)    
          Returns:
              Dict: Métriques consolidées d'entraînement contenant:
@@ -144,16 +166,16 @@ class ETFScoringEngine:
             if not isinstance(y, pd.Series):
                 raise ValueError("y doit être une Series pandas")
             
-            if graph_data is not None and not isinstance(graph_data, dict):
-                raise ValueError("graph_data doit être un dictionnaire si fourni")
+            if graph_data is not None and not isinstance(graph_data, Data):
+                raise ValueError("graph_data doit être un Data si fourni")
             
             if len(X) != len(y):
                 raise ValueError("X et y doivent avoir la même longueur")
             if epochs <= 0:
-                raise ValueError("Le nombre d'époques doit être positif")
+                raise ValueError("Le nombre d'époques doisst être positif")
             
             # 1. Prétraitement des données
-            X_processed = self.data_pipeline.process(X)
+            X_processed = self._prepare_etf_features(X)
             if X_processed.empty:
                 raise ValueError("Le DataFrame prétraité est vide")
 
@@ -170,7 +192,7 @@ class ETFScoringEngine:
                 self.monitor.track_performance('gnn_loss', gnn_metrics['gnn_loss'])
                 
             # 4. Initialisation de l'explicateur SHAP
-            self._init_explainer(X_processed)
+            #self._init_explainer(X_processed)
             
             # Suivi des performances globales
             self.monitor.track_performance('total_training_loss',train_metrics.get('gnn_loss', train_metrics['supervised_loss']))
@@ -209,18 +231,23 @@ class ETFScoringEngine:
                 try:
                     self.optimizer.zero_grad()
                     # Forward pass supervisé
-                    preds = self.semi_supervised_model(batch_X)
+                    preds = self.semi_supervised_model(batch_X, use_combined=False)
                     supervised_loss = self.loss_fn(preds, batch_y)
                     # Forward pass VAE
                     recon, mu, logvar = self.semi_supervised_model(batch_X, supervised=False)
-                    vae_loss = self.loss_fn(preds, batch_y, (recon, mu, logvar))
+                    vae_loss = self.loss_fn(
+                        preds=preds,
+                        targets=batch_y,
+                        vae_outputs=(recon, mu, logvar),
+                        original_input=batch_X
+                        )
                     # Backpropagation
                     total_loss = supervised_loss + vae_loss
                     total_loss.backward()
                     self.optimizer.step()
                 
                 finally:
-                    self.memory_optimizer.clear_tensors(batch_X, batch_y, preds, recon, mu, logvar)
+                    self.memory_optimizer.clear_tensors(batch_X, batch_y)
         
         return {
             'supervised_loss': supervised_loss.item(),
@@ -228,7 +255,7 @@ class ETFScoringEngine:
 
     
 
-    def _train_with_gnn(self, graph_data: Dict, y: torch.Tensor) -> Dict:
+    def _train_with_gnn(self, graph_data: Data, y: torch.Tensor) -> Dict:
         """Effectue l'entraînement avec le modèle GNN en utilisant le monitoring système
          Args:graph_data: Données graphiques sous forme brute ou prétraitées y: 
          Tensors des cibles d'entraînement"""
@@ -240,9 +267,8 @@ class ETFScoringEngine:
                 raise ValueError("Target y must be a valid torch.Tensor")
             
             # Conversion ou validation des données graph
-            if not isinstance(graph_data, dict) or 'x' not in graph_data:
+            if not isinstance(graph_data, Data) or 'x' not in graph_data:
                 self.monitor.track_performance('data_conversion', 1)
-                graph_data = self._get_graph_data(graph_data)
             
             else:
                 self.monitor.track_performance('data_conversion', 0)
@@ -283,8 +309,9 @@ class ETFScoringEngine:
 
     def _prepare_etf_features(self, etf_data: pd.DataFrame) -> pd.DataFrame:
         """Transforme les données ETF brutes en features pour le modèle"""
-        
         return self.feature_builder.transform(etf_data)
+    
+
     
     def _validate_config(self):
         """Vérifie la cohérence de la configuration du moteur"""
@@ -303,42 +330,6 @@ class ETFScoringEngine:
             scores=scores,
             prepared_features=features)
     
-    
-    
-    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Prédit les notes pour les ETFs avec explications"""
-        self.monitor.log_operation_start('prediction')
-        
-        try:
-            # 1. Préparation des features
-            features = self._prepare_etf_features(X)
-            
-            # 2. Prédiction du modèle
-            with torch.no_grad():
-                X_tensor = torch.FloatTensor(features.values).to(self.device)
-                raw_scores = self.semi_supervised_model(X_tensor).cpu().numpy()
-            
-            # 3. Conversion en note (A+ à D)
-            ratings = pd.cut(
-                raw_scores.flatten(),
-                bins=[0, 0.6, 0.7, 0.8, 0.9, 1.0],
-                labels=['D', 'C', 'B', 'A', 'A+']
-            )
-            
-            # 4. Formatage des résultats
-            results = pd.DataFrame({
-                'etf_id': X['etfId'],
-                'raw_score': raw_scores.flatten(),
-                'rating': ratings,
-                **self._generate_explanations(X, raw_scores)
-            })
-            
-            self.monitor.log_operation_success('prediction')
-            return results
-            
-        except Exception as e:
-            self.monitor.log_operation_failure('prediction', str(e))
-            raise
 
     def evaluate(self, X: pd.DataFrame, y: pd.Series) -> Dict[str, float]:
         X_tensor, y_tensor = self._prepare_tensors(X, y)
@@ -350,40 +341,37 @@ class ETFScoringEngine:
         return {'MSE': mse, 'MAE': mae}
 
         
-    
     def explain(self, X: pd.DataFrame, sample_size: int = 100) -> pd.DataFrame:
-        """
-        Génère des explications SHAP pour les prédictions
-        
+        """Génère des explications SHAP pour les prédictions
         Args:
-            X: Données à expliquer
-            sample_size: Taille de l'échantillon pour approximation
-            
+        X: 
+          Données à expliquer
+          sample_size: Taille de l'échantillon pour approximation   
         Returns:
-            DataFrame avec les valeurs SHAP
+        DataFrame avec les valeurs SHAP
         """
+        
         if self.explainer is None:
             self._init_explainer(X)
-            
-        X_processed = self.data_pipeline.process(X)
-        sample = X_processed.sample(min(sample_size, len(X)))
         
-        shap_values = self.explainer.shap_values(sample)
+        sample = X.sample(min(sample_size, len(X)))
+        # Conversion en tensor
+        sample_tensor = torch.tensor(sample.values, dtype=torch.float32).to(self.device)
+        
+        # Calcul des valeurs SHAP
+        shap_values = self.explainer.shap_values(sample_tensor)
+        
         return pd.DataFrame(
             shap_values,
-            columns=X_processed.columns,
+            columns=X.columns,
             index=sample.index
-        )
+            )
     
     def evaluate_stress_scenarios(self, X: pd.DataFrame) -> Dict:
-        """
-        Évalue les performances sous différents scénarios de stress
-        
+        """Évalue les performances sous différents scénarios de stress
         Args:
             X: Données de base
-            
-        Returns:
-            Résultats des stress tests
+        Returns: Résultats des stress tests
         """
         return self.stress_tester.run_all_scenarios(X, self)
     
@@ -405,34 +393,115 @@ class ETFScoringEngine:
         self.gnn_model.load_state_dict(state['gnn_state'])
         self.optimizer.load_state_dict(state['optimizer'])
         logger.info("Model loaded from %s", path)
-        
+
+
     def run_full_analysis(self, raw_etf_data: List[Dict]) -> Dict:
-        """Pipeline complet: données → notation → analyse"""
+        """Pipeline complet intégrant tous les composants: 
+        données → features → graphe → entraînement → notation → analyse de risque → 
+        scénarios de stress → explicabilité
+        Args:raw_etf_data: Données brutes des ETFs au format JSON/dictionnaire """
+        
+        self.monitor.log_operation_start('full_analysis')
+        
         try:
-            # 1. Conversion des données JSON
+            # 1. Validation des données d'entrée
+            if not raw_etf_data or not isinstance(raw_etf_data, list):
+                raise ValueError("Input data must be non-empty list of dicts")
+            
+            # 2. Conversion et prétraitement
             etf_df = pd.json_normalize(raw_etf_data)
-            
-            # 2. Prétraitement
             processed_data = self.data_pipeline.process(etf_df)
+            if processed_data.empty:
+                raise ValueError("Processed ETF data is empty after pipeline")
             
-            # 3. Notation
-            ratings = self.predict(processed_data)
+            # 3 Construction des features et du graphe 
+            graph_data = self.graph_processor.build_graph_from_raw(raw_etf_data)
+        
+            if not isinstance(graph_data, Data):
+                raise ValueError("build_graph_from_raw must return a PyG Data object")
+            if not hasattr(graph_data, 'x') or not hasattr(graph_data, 'edge_index'):
+                raise ValueError("Data object must contain x and edge_index attributes")
+            
+            # TRANSFORMATION EN FEATURES
+            features = self._prepare_etf_features(processed_data)
+
+            # 4 generation de cibles fictives proxy 
+            dummy_targets = pd.Series(np.random.rand(len(processed_data)))
+          
+            # 5. Entraînement AVEC LES FEATURES
+            self.train(X=features, y=dummy_targets, graph_data=graph_data, epochs=30)
+
+            # 6. Notation    
+            scoring_system = ETFScoring(
+                model=self.semi_supervised_model,
+                gnn_model=self.gnn_model,
+                device=self.device,
+                monitor=self.monitor,
+                feature_selector=features
+                )
+            
+            # Notation AVEC LES FEATURES
+            ratings = scoring_system.predict(features)
+    
+            # 7. Analyse de risque avec validation
+            validator = ETFValidator(thresholds=self.config['VALIDATION_THRESHOLDS'])
+            risk_analysis = validator.validate_ratings(ratings, processed_data)
+            
+            # 8. Scénarios de stress
+            stress_results = self.stress_tester.run_all_scenarios(
+                base_data=processed_data,
+                feature_builder=self.feature_builder,
+                model=self.semi_supervised_model,
+                device=self.device
+                )
+            
+
+            # 9. Explicabilité (désactivée pour le moment)
+            # sample_size = min(25, len(processed_data))
+            # # explanations = self.explain(X=processed_data, sample_size=sample_size)
+            
+            # 10. Métadonnées système
+            system_stats = {
+                'device': str(self.device),
+                'memory_usage': self.monitor.get_memory_usage(),
+                'processing_time': self.monitor.get_operation_duration('full_analysis')
+                }
+            
+            self.monitor.log_operation_success('full_analysis')
             
             return {
                 'timestamp': datetime.now().isoformat(),
                 'ratings': ratings.to_dict('records'),
+                'risk_analysis': risk_analysis,
+                'stress_test': stress_results,
+                # 'explanations': explanations.to_dict('list'),
                 'data_stats': {
                     'num_etfs': len(ratings),
-                    'avg_score': ratings['raw_score'].mean()
+                    'avg_score': float(ratings['normalized_score'].mean()),
+                    'risk_distribution': risk_analysis['risk_distribution']
+                    },
+                'system': system_stats
                 }
-            }
-            
-        except Exception as e:
-            logger.error(f"Analysis failed: {e}")
+        
+        except ValueError as ve:
+            error_msg = f"Data validation error: {str(ve)}"
+            self.monitor.log_operation_failure('full_analysis', error_msg)
+            logger.error(error_msg)
             raise
         
-    
-    
+        except RuntimeError as re:
+            error_msg = f"Analysis execution error: {str(re)}"
+            self.monitor.log_operation_failure('full_analysis', error_msg)
+            logger.error(error_msg)
+            raise
+        
+        except Exception as e:
+            error_msg = f"Unexpected analysis error: {str(e)}"
+            self.monitor.log_operation_failure('full_analysis', error_msg)
+            logger.error(error_msg, exc_info=True)
+            raise
+
+
     ## LEs méthodes privées pour la préparation des données et des tensors
     # sont utilisées pour transformer les données brutes en formats utilisables par les modèles.
     
@@ -469,7 +538,7 @@ class ETFScoringEngine:
         return self.graph_processor.prepare_graph_data(etf_data) 
 
 
-    def _init_explainer(self, etf_data: pd.DataFrame) -> None:
+    def _init_explainer(self, etf_data: pd.DataFrame,num=10) -> None:
         """Initialise SHAP en exploitant pleinement le dataset ETF.
          Args:
          etf_data: DataFrame issu du JSON avec colonnes:
@@ -492,10 +561,11 @@ class ETFScoringEngine:
                 etf_data
                 .sort_values('fundamentals.liquidity.avgDailyVolume', ascending=False)
                 .drop_duplicates('etfId')
-                .head(50)  # Taille fixe pour la stabilité
+                .head(num)  # Taille fixe pour la stabilité
                 )
             
             logger.debug(f"SHAP background: {len(background)} ETFs sélectionnés")
+            
             # 2. Vérification du contenu des features
             if 'fundamentals.costs.ter' not in background.columns:
                 logger.warning("TER manquant - utilisation de 0.001 comme valeur par défaut")
@@ -529,48 +599,50 @@ class ETFScoringEngine:
 
 
 
+
+
+
 if __name__ == "__main__":
-    from config import MODEL_CONFIG, RISK_PARAMETERS, VALIDATION_THRESHOLDS, REQUIRED_COLUMNS
+    from config import (
+        MODEL_CONFIG,
+        RISK_PARAMETERS,
+        VALIDATION_THRESHOLDS,
+        REQUIRED_COLUMNS,
+        GRAPH_CONFIG,
+        FEATURE_FLAGS,
+        STRESS_SCENARIOS
+    )
+    
     data_preprocessor = DataPreprocessor()
 
+    # Configuration consolidée
     config = {
-        # Paramètres modèle (tirés directement de MODEL_CONFIG)
+        # Import direct des configurations principales
         'MODEL_CONFIG': MODEL_CONFIG,
-        'input_dim': MODEL_CONFIG['input_dim'],
-        'hidden_layers': MODEL_CONFIG['hidden_layers'],
-        'learning_rate': MODEL_CONFIG['learning_rate'],
-        'dropout_rate': MODEL_CONFIG['dropout_rate'],
-        'alpha': MODEL_CONFIG['alpha'],
-        'beta': MODEL_CONFIG['beta'],
-        'batch_size': MODEL_CONFIG['batch_size'],
-        'weight_decay': 1e-5,  # Ajout manquant dans MODEL_CONFIG
-        
-        # Configuration GNN (ajout pour cohérence)
-        'gnn_input_dim': 3,  # Correspond aux features des noeuds dans _get_graph_data
-        
-        # Paramètres de risque
         'RISK_PARAMETERS': RISK_PARAMETERS,
         'VALIDATION_THRESHOLDS': VALIDATION_THRESHOLDS,
+        'REQUIRED_COLUMNS': REQUIRED_COLUMNS,
+        'GRAPH_CONFIG': GRAPH_CONFIG,
+        'FEATURE_FLAGS': FEATURE_FLAGS,
         
-        # Scénarios de test (maintenant alignés avec RISK_PARAMETERS)
-        'stress_scenarios': [
-            {
-                'name': 'Market Crash', 
-                'type': 'market_crash', 
-                'severity': RISK_PARAMETERS['volatility_bounds']['high'] * 1.5
-            },
-            {
-                'name': 'Liquidity Shock', 
-                'type': 'liquidity_shock', 
-                'factor': RISK_PARAMETERS['min_liquidity'] * 0.5
-            }
-        ],
+        # Paramètres dérivés (avec valeurs par défaut si manquantes)
+        'weight_decay': MODEL_CONFIG.get('weight_decay', 1e-5),
+        'gnn_input_dim': MODEL_CONFIG.get('gnn_input_dim', len(GRAPH_CONFIG['etf_features'])),
         
-        # Colonnes requises
-        'REQUIRED_COLUMNS': REQUIRED_COLUMNS
+        # Scénarios de stress (peuvent être modifiés)
+        'stress_scenarios': STRESS_SCENARIOS,
+        'alpha' : MODEL_CONFIG['alpha'],
+        'beta':MODEL_CONFIG['beta'],
+        'learning_rate':MODEL_CONFIG['learning_rate'],
+        'batch_size':MODEL_CONFIG['batch_size'],
+        'input_dim': MODEL_CONFIG['input_dim'],
+        'combined_dim': MODEL_CONFIG['combined_dim']
     }
+
+    # Validation de cohérence
+    assert config['gnn_input_dim'] == len(config['GRAPH_CONFIG']['etf_features'])+5, \
+        f"Incohérence dimension GNN: config={config['gnn_input_dim']}, features={len(config['GRAPH_CONFIG']['etf_features'])}"
     
-    # 2. Initialisation avec vérification
     
     try:
         engine = ETFScoringEngine(config)

@@ -1,4 +1,3 @@
-
 [
   {
     "etfId": "IVV-US-USD",
@@ -11,11 +10,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 425.80,
+        "currentPrice": 426.42,
         "previousClose": 423.25,
         "bidAskSpread": 0.01,
         "nav": 425.65,
-        "premiumDiscount": 0.04,
+        "premiumDiscount": 0.0018,
         "52WeekHigh": 435.40,
         "52WeekLow": 382.10
       },
@@ -149,11 +148,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 42.35,
+        "currentPrice": 42.52,
         "previousClose": 42.10,
         "bidAskSpread": 0.05,
         "nav": 42.30,
-        "premiumDiscount": 0.12,
+        "premiumDiscount": 0.0052,
         "52WeekHigh": 45.80,
         "52WeekLow": 38.20
       },
@@ -289,11 +288,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 185.25,
+        "currentPrice": 185.72,
         "previousClose": 184.80,
         "bidAskSpread": 0.10,
         "nav": 185.20,
-        "premiumDiscount": 0.03,
+        "premiumDiscount": 0.0028,
         "52WeekHigh": 195.40,
         "52WeekLow": 165.30
       },
@@ -425,11 +424,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 215.40,
+        "currentPrice": 215.67,
         "previousClose": 214.20,
         "bidAskSpread": 0.02,
         "nav": 215.35,
-        "premiumDiscount": 0.02,
+        "premiumDiscount": 0.0015,
         "52WeekHigh": 225.80,
         "52WeekLow": 190.50
       },
@@ -563,11 +562,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 175.80,
+        "currentPrice": 176.72,
         "previousClose": 174.50,
         "bidAskSpread": 0.03,
         "nav": 175.75,
-        "premiumDiscount": 0.03,
+        "premiumDiscount": 0.0055,
         "52WeekHigh": 185.40,
         "52WeekLow": 150.20
       },
@@ -699,11 +698,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 72.45,
+        "currentPrice": 72.94,
         "previousClose": 72.20,
         "bidAskSpread": 0.04,
         "nav": 72.40,
-        "premiumDiscount": 0.07,
+        "premiumDiscount": 0.0075,
         "52WeekHigh": 75.80,
         "52WeekLow": 65.40
       },
@@ -839,11 +838,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 112.45,
+        "currentPrice": 112.74,
         "previousClose": 112.30,
         "bidAskSpread": 0.08,
         "nav": 112.40,
-        "premiumDiscount": 0.04,
+        "premiumDiscount": 0.0030,
         "52WeekHigh": 115.80,
         "52WeekLow": 105.20
       },
@@ -979,11 +978,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 48.25,
+        "currentPrice": 48.61,
         "previousClose": 47.80,
         "bidAskSpread": 0.15,
         "nav": 48.20,
-        "premiumDiscount": 0.10,
+        "premiumDiscount": 0.0085,
         "52WeekHigh": 55.40,
         "52WeekLow": 35.20
       },
@@ -1119,11 +1118,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 98.45,
+        "currentPrice": 98.77,
         "previousClose": 98.20,
         "bidAskSpread": 0.05,
         "nav": 98.40,
-        "premiumDiscount": 0.05,
+        "premiumDiscount": 0.0038,
         "52WeekHigh": 102.80,
         "52WeekLow": 88.20
       },
@@ -1259,11 +1258,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 385.40,
+        "currentPrice": 391.46,
         "previousClose": 383.20,
         "bidAskSpread": 0.04,
         "nav": 385.35,
-        "premiumDiscount": 0.01,
+        "premiumDiscount": 0.0158,
         "52WeekHigh": 395.80,
         "52WeekLow": 320.20
       },
@@ -1397,11 +1396,11 @@
     },
     "fundamentals": {
       "priceData": {
-        "currentPrice": 72.45,
+        "currentPrice": 72.41,
         "previousClose": 72.40,
         "bidAskSpread": 0.06,
         "nav": 72.42,
-        "premiumDiscount": 0.04,
+        "premiumDiscount": -0.0001,
         "52WeekHigh": 75.80,
         "52WeekLow": 70.20
       },
@@ -1529,154 +1528,139 @@
     "etfId": "SPY-US-USD",
     "name": "SPDR S&P 500 ETF Trust",
     "metadata": {
-    "issuer": "State Street Global Advisors",
-    "description": "Seeks to provide investment results that correspond to the S&P 500 Index",
-    "creationDate": "1993-01-22",
-    "lastRebalanceDate": "2023-12-15"
+      "issuer": "State Street Global Advisors",
+      "description": "Seeks to provide investment results that correspond to the S&P 500 Index",
+      "creationDate": "1993-01-22",
+      "lastRebalanceDate": "2023-12-15"
     },
-
-  "fundamentals": {
-    "priceData": {
-      "currentPrice": 422.50,
-      "previousClose": 420.00,
-      "bidAskSpread": 0.02,
-      "nav": 422.30,
-      "premiumDiscount": 0.05,
-      "52WeekHigh": 432.10,
-      "52WeekLow": 380.25
-    },
-    
-    "costs": {
-      "ter": 0.0009,
-      "trackingDifference": -0.0012,
-      "trackingError": 0.0021,
-      "lendingRevenue": 0.0005,
-      "transactionCosts": 0.0003
-    },
-    
-    "liquidity": {
-      "avgDailyVolume": 5000000,
-      "avgBidAskSpread": 0.02,
-      "impliedLiquidity": 15000000,
-      "marketImpactScore": 0.12
-    }
-  },
-
-  "timeSeries": {
-    "dailyReturns": [0.003, -0.012, 0.008], 
-    "historicalNav": [
-      {"date": "2023-01-03", "value": 382.45},
-      {"date": "2023-01-04", "value": 384.12},
-      {"date": "2023-01-05", "value": 385.67}
-    ],
-    "trackingDifferenceHistory": [
-      {"date": "2023-01", "value": -0.0015},
-      {"date": "2023-02", "value": -0.0011},
-      {"date": "2023-03", "value": -0.0018}
-    
-    ]
-  },
-
-
-  "portfolio": {
-    "holdings": [
-      {
-        "assetId": "AAPL-US",
-        "name": "Apple Inc.",
-        "weight": 0.072,
-        "sector": "Technology",
-        "country": "US",
-        "contributionToTrackingError": 0.0012
-      }
-    ],
-    
-    "characteristics": {
-      "sectorWeights": {
-        "Technology": 0.28,
-        "Health Care": 0.14,
-        "Financials": 0.13
+    "fundamentals": {
+      "priceData": {
+        "currentPrice": 424.30,
+        "previousClose": 420.00,
+        "bidAskSpread": 0.02,
+        "nav": 422.30,
+        "premiumDiscount": 0.0047,
+        "52WeekHigh": 432.10,
+        "52WeekLow": 380.25
       },
-      "countryWeights": {
-        "US": 1.00
+      "costs": {
+        "ter": 0.0009,
+        "trackingDifference": -0.0012,
+        "trackingError": 0.0021,
+        "lendingRevenue": 0.0005,
+        "transactionCosts": 0.0003
       },
-      "factorExposures": {
-        "beta": 1.02,
-        "size": 0.95,
-        "value": -0.32,
-        "momentum": 0.15,
-        "quality": 0.78
+      "liquidity": {
+        "avgDailyVolume": 5000000,
+        "avgBidAskSpread": 0.02,
+        "impliedLiquidity": 15000000,
+        "marketImpactScore": 0.12
       }
+    },
+    "timeSeries": {
+      "dailyReturns": [0.003, -0.012, 0.008],
+      "historicalNav": [
+        {"date": "2023-01-03", "value": 382.45},
+        {"date": "2023-01-04", "value": 384.12},
+        {"date": "2023-01-05", "value": 385.67}
+      ],
+      "trackingDifferenceHistory": [
+        {"date": "2023-01", "value": -0.0015},
+        {"date": "2023-02", "value": -0.0011},
+        {"date": "2023-03", "value": -0.0018}
+      ]
+    },
+    "portfolio": {
+      "holdings": [
+        {
+          "assetId": "AAPL-US",
+          "name": "Apple Inc.",
+          "weight": 0.072,
+          "sector": "Technology",
+          "country": "US",
+          "contributionToTrackingError": 0.0012
+        }
+      ],
+      "characteristics": {
+        "sectorWeights": {
+          "Technology": 0.28,
+          "Health Care": 0.14,
+          "Financials": 0.13
+        },
+        "countryWeights": {
+          "US": 1.00
+        },
+        "factorExposures": {
+          "beta": 1.02,
+          "size": 0.95,
+          "value": -0.32,
+          "momentum": 0.15,
+          "quality": 0.78
+        }
+      }
+    },
+    "riskAnalysis": {
+      "volatility": {
+        "30d": 0.138,
+        "90d": 0.140,
+        "annualized": 0.142
+      },
+      "drawdowns": {
+        "maxDrawdown": -0.238,
+        "avgDrawdown": -0.052,
+        "recoveryTimeDays": 63
+      },
+      "correlations": {
+        "spx": 0.998,
+        "agg": 0.124,
+        "gld": -0.034
+      },
+      "liquidityRisk": {
+        "redemptionCost": 0.0018,
+        "basketLiquidityScore": 0.92
+      }
+    },
+    "alternativeData": {
+      "sentiment": {
+        "newsSentiment": 0.72,
+        "socialMediaSentiment": 0.65,
+        "analystConsensus": 0.81
+      },
+      "flows": {
+        "30dNetFlow": 1500000000,
+        "ytdFlow": 12000000000
+      },
+      "ownership": {
+        "institutionalPercentage": 0.62,
+        "topHolder": "Vanguard Group"
+      }
+    },
+    "replication": {
+      "method": "Full Replication",
+      "optimization": {
+        "samplingError": 0.0002,
+        "numHoldings": 503,
+        "coverage": 1.00
+      },
+      "lending": {
+        "isLending": true,
+        "lendingRevenue": 0.0005,
+        "collateralQuality": "AAA"
+      }
+    },
+    "peerComparison": {
+      "avgTer": 0.0012,
+      "avgTrackingError": 0.0025,
+      "percentileRank": {
+        "cost": 0.95,
+        "liquidity": 0.98,
+        "tracking": 0.91
+      }
+    },
+    "system": {
+      "lastUpdated": "2023-12-20T15:30:00Z",
+      "dataSource": "Bloomberg/State Street",
+      "calculationMethodology": "MSCI RiskMetrics"
     }
-  },
-
-  "riskAnalysis": {
-    "volatility": {
-      "30d": 0.138,
-      "90d": 0.140,
-      "annualized": 0.142
-    },
-    "drawdowns": {
-      "maxDrawdown": -0.238,
-      "avgDrawdown": -0.052,
-      "recoveryTimeDays": 63
-    },
-    "correlations": {
-      "spx": 0.998,
-      "agg": 0.124,
-      "gld": -0.034
-    },
-    "liquidityRisk": {
-      "redemptionCost": 0.0018,
-      "basketLiquidityScore": 0.92
-    }
-  },
-
-
-  "alternativeData": {
-    "sentiment": {
-      "newsSentiment": 0.72,
-      "socialMediaSentiment": 0.65,
-      "analystConsensus": 0.81
-    },
-    "flows": {
-      "30dNetFlow": 1500000000,
-      "ytdFlow": 12000000000
-    },
-    "ownership": {
-      "institutionalPercentage": 0.62,
-      "topHolder": "Vanguard Group"
-    }
-  },
-
-  "replication": {
-    "method": "Full Replication",
-    "optimization": {
-      "samplingError": 0.0002,
-      "numHoldings": 503,
-      "coverage": 1.00
-    },
-    "lending": {
-      "isLending": true,
-      "lendingRevenue": 0.0005,
-      "collateralQuality": "AAA"
-    }
-  },
-
-
-  "peerComparison": {
-    "avgTer": 0.0012,
-    "avgTrackingError": 0.0025,
-    "percentileRank": {
-      "cost": 0.95,
-      "liquidity": 0.98,
-      "tracking": 0.91
-    }
-  },
-
-  "system": {
-    "lastUpdated": "2023-12-20T15:30:00Z",
-    "dataSource": "Bloomberg/State Street",
-    "calculationMethodology": "MSCI RiskMetrics"
-  }
   }
 ]

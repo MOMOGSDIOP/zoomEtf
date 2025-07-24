@@ -15,8 +15,10 @@ RISK_PARAMETERS = {
     'volatility_bounds': {
         'low': 0.05,
         'high': 0.5
-    }
+    },
+    'max_drawdown': -0.4
 }
+
 
 # Seuils de validation
 VALIDATION_THRESHOLDS = {
@@ -27,33 +29,94 @@ VALIDATION_THRESHOLDS = {
     ]
 }
 
-# Configuration du modèle
+
+# Configuration du modèle principal
 MODEL_CONFIG = {
-    'input_dim': 25,  # Doit correspondre au nombre exact de features générées
-    'hidden_layers': [256, 128, 64],  # Réduit pour s'adapter à la dimension d'entrée
+    'input_dim': 25,  # Doit correspondre aux features de base (X_tensor)
+    'gnn_input_dim': 25,  # Doit matcher avec GRAPH_CONFIG['etf_features']
+    'gnn_hidden_dim': 64,  # Dimensions des embeddings GNN
+    'combined_dim': 89,  # 64 (embeddings) + 25 (features)
+    'hidden_layers': [256, 128, 64],
     'learning_rate': 1e-4,
     'dropout_rate': 0.3,
-    'alpha': 0.7,  # Ajout des paramètres de loss
+    'alpha': 0.7,
     'beta': 0.3,
-    'batch_size': 64
+    'batch_size': 64,
+    'gnn_output_dim': 32
 }
 
 
+# Configuration du graphe
 GRAPH_CONFIG = {
     'normalize_features': True,
-    'feature_specs': {
-        'etf_features': [
-            ('fundamentals.costs.ter', 'numeric'),
-            ('fundamentals.liquidity.avgDailyVolume', 'numeric'),
-            ('riskAnalysis.volatility.annualized', 'numeric')
-        ],
-        'asset_features': [
-            ('weight', 'numeric'),
-            ('contributionToTrackingError', 'numeric'),
-            ('sector', 'categorical')
-        ]
-    }
+    'use_alternative_data': True,
+    'use_temporal_features': True,
+
+    # 15 features ETF (doit correspondre à gnn_input_dim)
+    'etf_features': [
+        # 1-5: Données fondamentales (Prix et Coûts)
+        'fundamentals.priceData.currentPrice',
+        'fundamentals.priceData.premiumDiscount',
+        'fundamentals.costs.ter',
+        'fundamentals.liquidity.avgDailyVolume',
+        'fundamentals.liquidity.marketImpactScore',
+        
+        # 6-10: Données de risque
+        'riskAnalysis.volatility.annualized',
+        'riskAnalysis.drawdowns.maxDrawdown',
+        'riskAnalysis.drawdowns.recoveryTimeDays',
+        'riskAnalysis.liquidityRisk.basketLiquidityScore',
+        'fundamentals.costs.trackingError',
+        
+        # 11-15: Données alternatives et flux
+        'alternativeData.sentiment.newsSentiment',
+        'alternativeData.sentiment.analystConsensus',
+        'alternativeData.ownership.institutionalPercentage',
+        'alternativeData.flows.30dNetFlow',
+        'peerComparison.percentileRank.cost',
+        
+        # 16-20: Expositions aux facteurs et métriques techniques
+        'portfolio.characteristics.factorExposures.beta',
+        'portfolio.characteristics.factorExposures.quality',
+        'portfolio.characteristics.factorExposures.momentum',
+        'replication.optimization.samplingError',
+        'replication.lending.lendingRevenue'
+    ],
+    'asset_features': [
+        'sector',
+        'country'
+    ],
+    'sectors': [
+        'Technology', 'Health Care', 'Financials', 'Consumer Discretionary',
+        'Consumer Staples', 'Industrials', 'Energy', 'Utilities',
+        'Real Estate', 'Materials', 'Communication Services'
+    ],
+    'edge_attributes': [
+        'weight',
+        'contributionToTrackingError'
+    ]
 }
+
+
+
+# Scénarios de stress
+STRESS_SCENARIOS = [
+    {
+        'name': 'Market Crash', 
+        'type': 'market_crash', 
+        'severity': 0.5  # +50% de volatilité
+    },
+    {
+        'name': 'Liquidity Shock', 
+        'type': 'liquidity_shock', 
+        'factor': 0.3  # -70% de liquidité
+    },
+    {
+        'name': 'Interest Rate Hike', 
+        'type': 'rate_increase', 
+        'increase': 0.02  # +2% de taux
+    }
+]
 
 #colonne  requis pour la configuration du système
 REQUIRED_COLUMNS = [
@@ -96,9 +159,30 @@ REQUIRED_COLUMNS = [
 ]
 
 
-VALIDATION_THRESHOLDS = {
-    'required_fields': REQUIRED_COLUMNS,
+# Paramètres avancés
+ADVANCED_SETTINGS = {
+    'memory_safety_factor': 0.7,
+    'shap_background_size': 50,
+    'max_processing_time': 30  # secondes
 }
 
-USE_ALTERNATIVE_DATA: True
-USE_TEMPORAL_FEATURES: True
+
+# Flags de fonctionnalités
+FEATURE_FLAGS = {
+    'USE_ALTERNATIVE_DATA': True,
+    'USE_TEMPORAL_FEATURES': True,
+    'ENABLE_STRESS_TESTING': True,
+    'ENABLE_EXPLANATIONS': True
+}
+
+# Validation des données
+VALIDATION_THRESHOLDS = {
+    'required_fields': REQUIRED_COLUMNS
+}
+
+FEATURE_FLAGS = {
+    'USE_ALTERNATIVE_DATA': True,
+    'USE_TEMPORAL_FEATURES': True,
+    'ENABLE_STRESS_TESTING': True,
+    'ENABLE_EXPLANATIONS': True
+}

@@ -2,113 +2,129 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv
+from torch_geometric.data import Data
+import logging 
 
+logger = logging.getLogger(__name__)
 
 class ETFGraphModel(nn.Module):
     def __init__(self, input_dim: int, hidden_dim: int = 64, heads: int = 3, dropout: float = 0.1):
         super().__init__()
-        
         self.hidden_dim = hidden_dim
 
-        # D1: Couche GNN (GAT - Graph Attention Network)
-        self.gnn = GATConv(input_dim, hidden_dim, heads=heads, concat=False)
+        # Couche GNN
+        self.gnn = GATConv(
+            in_channels=input_dim,
+            out_channels=hidden_dim, 
+            heads=heads, 
+            concat=False,
+            add_self_loops=True
+        )
 
-        # D2: Module Temporel LSTM
+        # Module Temporel
         self.temporal = nn.LSTM(hidden_dim, hidden_dim, batch_first=True)
 
-        # D3: Corrélation pairwise des embeddings
+        # Têtes de prédiction
         self.correlation_head = nn.Sequential(
             nn.Linear(hidden_dim * 2, 32),
             nn.ReLU(),
-            nn.Linear(32, 1)
-        )
-
-        # D4: Estimation d'incertitude (mu, sigma)
+            nn.Linear(32, 1))
+        
         self.uncertainty_head = nn.Sequential(
             nn.Linear(hidden_dim, 32),
             nn.ReLU(),
-            nn.Linear(32, 2)  # mean and std
-        )
-
+            nn.Linear(32, 2))
+        
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, graph_data):
+        """Forward pass avec validation des dimensions"""
+        if not hasattr(graph_data, 'x') or not hasattr(graph_data, 'edge_index'):
+            raise ValueError("GraphData doit contenir 'x' et 'edge_index'")
+            
         x, edge_index = graph_data.x, graph_data.edge_index
+        
+        # Transposition automatique si nécessaire
+        if edge_index.size(0) != 2:
+            edge_index = edge_index.t().contiguous()
+            logger.debug(f"Edge index transposé automatiquement vers {edge_index.shape}")
 
-        # D1: GNN - Encode les relations entre ETFs dans le graphe
-        x = self.gnn(x, edge_index)
+        # Passage GNN
+        x = F.relu(self.gnn(x, edge_index))
         x = self.dropout(x)
 
-        # D2: Traitement temporel - Données séquentielles (via LSTM)
-        x_lstm, _ = self.temporal(x.unsqueeze(0))  # batch_size = 1
-        x = x_lstm.squeeze(0)  # Retire la dimension batch
+        # Traitement temporel
+        x, _ = self.temporal(x.unsqueeze(0))
+        x = x.squeeze(0)
 
-        # D3: Corrélations entre embeddings
-        corr_matrix = self.calculate_correlations(x)  # [N, N]
-
-        # D4: Estimation d'incertitude (mu, sigma pour chaque ETF)
-        mu_sigma = self.uncertainty_head(x)  # [N, 2]
-        mu, sigma = torch.chunk(mu_sigma, 2, dim=1)  # [N, 1] x2
+        # Calcul des sorties
+        corr_matrix = self._compute_correlations(x)
+        mu_sigma = self.uncertainty_head(x)
+        mu, sigma = mu_sigma.chunk(2, dim=1)
 
         return x, corr_matrix, mu, sigma
 
-
-    def train(self,graph_data: dict,targets: torch.Tensor,downstream_model: nn.Module,loss_fn: nn.Module,optimizer: torch.optim.Optimizer,device: torch.device,memory_optimizer=None ) -> dict:
-        """
-        Entraîne le GNN + modèle aval (semi-supervisé), et retourne les métriques
-        """
-
-        try : 
-            # Validation minimal
-            if not isinstance(graph_data, dict) or 'x' not in graph_data or 'edge_index' not in graph_data:
-                raise ValueError("graph_data doit contenir au minimum les clés 'x' et 'edge_index'")
-            
+    def train(self, graph_data: Data, targets: torch.Tensor, downstream_model: nn.Module,
+              loss_fn: nn.Module, optimizer: torch.optim.Optimizer, device: torch.device,
+              memory_optimizer=None) -> dict:
+        """Entraînement avec gestion flexible du modèle downstream"""
+        
+        try: 
+            # Validation de base
+            if not isinstance(graph_data, Data):
+                raise TypeError("graph_data doit être un objet Data")
             if not isinstance(targets, torch.Tensor):
-                raise ValueError("targets doit être un tensor")
+                raise TypeError("targets doit être un Tensor")
             
-            # Passage sur device
-            graph_data = {
-                k: v.to(device) if torch.is_tensor(v) else v
-                for k, v in graph_data.items()}
-                
-            targets = targets.to(device)
+            # Transfert sur device
+            graph_data = graph_data.to(device)
+            targets = targets.to(device).float()
             
-            # 1. Passage GNN
+            # Gestion des dimensions des targets
+            if targets.dim() == 1:
+                targets = targets.view(-1, 1)
+
+            # Forward pass
             embeddings, corr, mu, sigma = self.forward(graph_data)
             
-            if embeddings.shape[0] != graph_data['x'].shape[0]:
-                raise RuntimeError(f"Incohérence de dimensions entre embeddings {embeddings.shape} et x {graph_data['x'].shape}")
+            # Vérification des dimensions
+            if embeddings.shape[0] != graph_data.x.shape[0]:
+                raise ValueError("Incohérence entre embeddings et features")
+
+            # Combinaison des features
+            combined = torch.cat([embeddings, graph_data.x], dim=1)
             
-            # 2. Fusion
-            combined = torch.cat([embeddings, graph_data['x']], dim=1)
-            
-            # 3. Entraînement du modèle semi-supervisé avec loss globale
+            # Entraînement
             optimizer.zero_grad()
-            preds = downstream_model(combined)
+            
+            # Appel flexible au modèle downstream
+            if hasattr(downstream_model, 'encoder'):
+                preds = downstream_model(combined)
+            else:
+                preds = downstream_model(combined, use_combined=True)
+            
+            # Ajustement des dimensions si nécessaire
+            if preds.dim() == 1 and targets.dim() == 2:
+                preds = preds.unsqueeze(1)
+            elif preds.dim() == 2 and targets.dim() == 1:
+                targets = targets.unsqueeze(1)
+
             loss = loss_fn(preds, targets)
             loss.backward()
             optimizer.step()
             
-            return {"gnn_loss": float(loss.item()),"correlation": float(corr.mean().item())}
-        
-
+            return {
+                "gnn_loss": float(loss.item()),
+                "correlation": float(corr.mean().item()),
+                "mu": float(mu.mean().item()),
+                "sigma": float(sigma.mean().item())
+            }
+            
         finally:
             if memory_optimizer:
-                memory_optimizer.clear_tensors(embeddings, corr, mu, sigma, preds)
-        
+                memory_optimizer.clear_tensors()
 
-    def calculate_correlations(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Calcule une matrice de similarité cosinus entre les embeddings des ETFs.
-        Args:
-            x (Tensor): [N, D] où N = nombre d'ETFs, D = dimension des embeddings
-        Returns:
-            Tensor: [N, N] matrice symétrique de similarité (cosine similarity)
-        """
-        # Normalise chaque vecteur pour que le produit scalaire donne le cosinus
-        x_norm = F.normalize(x, p=2, dim=1)  # [N, D]
-
-        # Produit scalaire => similarité cosinus
-        similarity_matrix = torch.matmul(x_norm, x_norm.T)  # [N, N], valeurs ∈ [-1, 1]
-
-        return similarity_matrix
+    def _compute_correlations(self, x):
+        """Calcul des similarités cosinus avec stabilité numérique"""
+        x_norm = F.normalize(x, p=2, dim=1)
+        return torch.mm(x_norm, x_norm.t())
