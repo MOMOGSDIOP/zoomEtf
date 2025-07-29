@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from sklearn.feature_selection import SelectKBest, f_regression
 import  logging
-
+from config import REQUIRED_COLUMNS, COLUMN_MAPPING
 logger = logging.getLogger(__name__)
 
 class ETFScoring:
@@ -41,45 +41,45 @@ class ETFScoring:
         return pd.DataFrame(selected_features, columns=[f"feature_{i}" for i in range(self.input_dim)])
     
 
-    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, X:pd.DataFrame) -> pd.DataFrame:
         """Prédiction avec échelle de notes fixe"""
         self.monitor.log_operation_start('prediction')
         
         try:
-            # 1. Vérification des colonnes REQUISES
-            required_cols = self.feature_selector.required_columns
-            missing = set(required_cols) - set(X.columns)
+            # Rename columns to match expected names
+            X_renamed = X.rename(columns=COLUMN_MAPPING)
             
+            # 1. Vérification des colonnes REQUISES
+            required_cols = REQUIRED_COLUMNS 
+            missing = set(required_cols) - set(X_renamed.columns)
+            
+            # 2. Vérification des colonnes requises
+            missing = set(REQUIRED_COLUMNS) - set(X_renamed.columns)
             if missing:
-                logger.error(f"Colonnes manquantes: {missing}")
                 raise ValueError(f"Features manquantes: {missing}")
             
-            # 2. Vérification des NaN
-            if X.isnull().values.any():
-                nan_count = X.isnull().sum().sum()
-                nan_cols = X.columns[X.isnull().any()].tolist()
-                logger.error(f"NaN détectés dans les features: {nan_count} valeurs dans les colonnes {nan_cols}")
-                raise ValueError("Données d'entrée contiennent des NaN")
+            # 3. Copie des données et remplacement simple des NaN
+            X_clean = X_renamed.copy()
             
-            # 3. Conversion sécurisée
-            try:
-                X_array = X.values.astype(np.float32)
-                X_tensor = torch.tensor(X_array, dtype=torch.float32, device=self.device)
-            except Exception as e:
-                logger.error(f"Échec conversion tensor: {str(e)}")
-                logger.debug(f"Dtypes des colonnes: {X.dtypes}")
-                logger.debug(f"Valeurs problématiques: {X[X.applymap(np.isinf).any(axis=1)]}")
-                raise
+            # Remplacer tous les NaN par la médiane de chaque colonne
+            for col in X_clean.columns:
+                if X_clean[col].isnull().any():
+                    median_val = X_clean[col].median()
+                    X_clean[col] = X_clean[col].fillna(median_val)
+                    logger.info(f"NaN dans {col} remplacés par médiane: {median_val:.2f}")
             
-            # 4. Vérification finale du tensor
+            # 4. Conversion sécurisée en tensor
+            X_array = X_clean.values.astype(np.float32)
+            X_tensor = torch.tensor(X_array, dtype=torch.float32, device=self.device)
+            
+            # 5. Vérification rapide
             if torch.isnan(X_tensor).any():
-                nan_positions = torch.isnan(X_tensor).nonzero(as_tuple=True)
-                logger.error(f"NaN dans le tensor aux positions: {nan_positions}")
-                raise RuntimeError("NaN dans le tensor d'entrée après conversion")
+                raise RuntimeError("NaN détectés après conversion")
             
-            # 5. Prédiction du modèle
+            # 6. Prédiction
             with torch.no_grad():
                 raw_scores = self.model(X_tensor).cpu().numpy().flatten()
+            
             
             # 6. Vérification des scores bruts
             if np.isnan(raw_scores).any():

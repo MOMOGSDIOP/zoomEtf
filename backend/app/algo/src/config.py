@@ -186,3 +186,30 @@ FEATURE_FLAGS = {
     'ENABLE_STRESS_TESTING': True,
     'ENABLE_EXPLANATIONS': True
 }
+
+COLUMN_MAPPING = {
+    'cost_score': 'fundamentals.costs.ter',
+    'tracking_error_score': 'fundamentals.costs.trackingError',
+    'liquidity_score': 'fundamentals.liquidity.avgDailyVolume',
+    'bid_ask_score': 'fundamentals.liquidity.avgBidAskSpread',
+    'market_impact_score': 'fundamentals.liquidity.marketImpactScore',
+    'volatility_30d': 'riskAnalysis.volatility.30d',
+    'max_drawdown_score': 'riskAnalysis.drawdowns.maxDrawdown',
+    'recovery_time_score': 'riskAnalysis.drawdowns.recoveryTimeDays',
+    'flow_score': 'alternativeData.flows.30dNetFlow',
+    'sentiment_news': 'alternativeData.sentiment.newsSentiment',
+    'sentiment_social': 'alternativeData.sentiment.socialMediaSentiment',
+    'analyst_consensus': 'alternativeData.sentiment.analystConsensus',
+    'factor_beta': 'portfolio.characteristics.factorExposures.beta',
+    'factor_size': 'portfolio.characteristics.factorExposures.size',
+    'factor_value': 'portfolio.characteristics.factorExposures.value',
+    'factor_momentum': 'portfolio.characteristics.factorExposures.momentum',
+    'factor_quality': 'portfolio.characteristics.factorExposures.quality',
+    'sampling_error_score': 'replication.optimization.samplingError',
+    'lending_revenue_score': 'replication.lending.lendingRevenue',
+    'institutional_score': 'alternativeData.ownership.institutionalPercentage',
+    'coverage_score': 'replication.optimization.coverage',
+    'basket_liquidity_score': 'riskAnalysis.liquidityRisk.basketLiquidityScore',
+    'fund_age_years': 'metadata.creationDate'
+    # Add mappings for ter_acceptable and liquidity_acceptable if needed
+}

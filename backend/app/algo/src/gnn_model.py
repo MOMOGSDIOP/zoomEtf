@@ -37,6 +37,13 @@ class ETFGraphModel(nn.Module):
         
         self.dropout = nn.Dropout(dropout)
 
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
+
     def forward(self, graph_data):
         """Forward pass avec validation des dimensions"""
         if not hasattr(graph_data, 'x') or not hasattr(graph_data, 'edge_index'):
@@ -57,7 +64,7 @@ class ETFGraphModel(nn.Module):
         x, _ = self.temporal(x.unsqueeze(0))
         x = x.squeeze(0)
 
-        # Calcul des sorties
+        # Calcul des sortie
         corr_matrix = self._compute_correlations(x)
         mu_sigma = self.uncertainty_head(x)
         mu, sigma = mu_sigma.chunk(2, dim=1)
@@ -95,8 +102,9 @@ class ETFGraphModel(nn.Module):
             combined = torch.cat([embeddings, graph_data.x], dim=1)
             
             # Entraînement
-            optimizer.zero_grad()
-            
+            for param in self.parameters():
+                param.grad = None 
+
             # Appel flexible au modèle downstream
             if hasattr(downstream_model, 'encoder'):
                 preds = downstream_model(combined)
@@ -124,7 +132,30 @@ class ETFGraphModel(nn.Module):
             if memory_optimizer:
                 memory_optimizer.clear_tensors()
 
+
     def _compute_correlations(self, x):
-        """Calcul des similarités cosinus avec stabilité numérique"""
         x_norm = F.normalize(x, p=2, dim=1)
-        return torch.mm(x_norm, x_norm.t())
+        corr = torch.mm(x_norm, x_norm.t())
+        return torch.triu(corr, diagonal=1)  #
+    
+    
+    def predict_portfolio_weights(self, graph_data, temperature=1.0):
+        """Convertit les embeddings en poids de portefeuille"""
+        with torch.no_grad():
+            embeddings, _, mu, _ = self.forward(graph_data)
+            weights = F.softmax(mu / temperature, dim=0)
+        return weights
+    
+    def compute_risk_metrics(self, graph_data):
+        """Calcule des métriques de risque basées sur les sorties"""
+        _, corr_matrix, mu, sigma = self.forward(graph_data)
+        portfolio_variance = (sigma**2).sum() + 2 * (corr_matrix * sigma @ sigma.T).sum()
+        return {
+            'volatility': torch.sqrt(portfolio_variance).item(),
+            'diversification': 1 / (sigma**2).sum().item()
+            }
+    
+    @torch.inference_mode()
+    def inference(self, graph_data):
+        """Version optimisée pour l'inférence"""
+        return self.forward(graph_data)

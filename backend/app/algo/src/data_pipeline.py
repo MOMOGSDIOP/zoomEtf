@@ -29,7 +29,7 @@ class ETFDataPipeline:
 
     def process(self, df: pd.DataFrame) -> pd.DataFrame:
         """Pipeline principal : aplatissement, nettoyage, encodage, normalisation"""
-        df = self.flatten_nested_structures(df)  # Changement de nom pour plus de clarté
+        df = self.flatten_nested_structures(df) 
         df = self.add_temporal_features(df)
         df = self.handle_missing_and_encoding(df)
         df = self.process_numerical_features(df)

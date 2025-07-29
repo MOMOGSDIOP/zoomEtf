@@ -77,6 +77,7 @@ class ETFGraphProcessor:
         except Exception as e:
             logger.error(f"Graph construction failed: {str(e)}", exc_info=True)
             raise
+        
 
     def _extract_base_elements(self, etf_data: List[Dict[str, Any]]) -> Tuple:
         """Extraction basée sur la configuration avec gestion robuste des données"""
@@ -85,7 +86,7 @@ class ETFGraphProcessor:
             raise ValueError("Graph feature configuration is missing")
         
         # Réinitialiser les indices
-        self.etf_node_indices = {}
+        self.etf_node_indices = {} 
         self.asset_node_indices = {}
         
         # Dimensions
@@ -101,11 +102,24 @@ class ETFGraphProcessor:
         asset_info = {}
         edge_attributes = []
         current_idx = 0
-
+        
+        # First, ensure etf_data is a list of dictionaries
+        if not isinstance(etf_data, list):
+            raise ValueError("etf_data should be a list of ETF dictionaries")
+        
         # Premier passage: traiter tous les ETFs
         for etf in etf_data:
+            if not isinstance(etf, dict):
+                logger.warning("Skipping non-dictionary ETF data")
+                continue
+            
+            
             try:
-                etf_id = etf['etfId']
+                etf_id = int(etf.get('etfId'))  
+                if etf_id == 0:
+                    logger.warning("Skipping ETF with missing or invalid ID")
+                    continue
+                
                 self.etf_node_indices[etf_id] = current_idx
                 etf_ids.append(etf_id)
                 
@@ -115,14 +129,19 @@ class ETFGraphProcessor:
                 for i, feature_path in enumerate(self.config.etf_features):
                     value = self._get_nested_value(etf, feature_path)
                     etf_features[i] = float(value) if value is not None else 0.0
-                
+                    
                 node_features.append(etf_features)
                 current_idx += 1
-
+                
                 # Collecter les holdings pour traitement ultérieur
-                holdings = etf.get('portfolio', {}).get('holdings', [])
+                portfolio = etf.get('portfolio', {})
+                holdings = portfolio.get('holdings', []) if isinstance(portfolio, dict) else []
+                
                 for holding in holdings:
+                    if not isinstance(holding, dict):
+                        continue
                     asset_id = holding.get('assetId')
+                    
                     if asset_id:
                         holdings_info.append((etf_id, asset_id, holding))
                         
@@ -132,12 +151,16 @@ class ETFGraphProcessor:
                             for feature in self.config.asset_features:
                                 asset_info[asset_id][feature] = holding.get(feature)
             
-            except KeyError as e:
-                logger.warning(f"Missing required ETF data field: {str(e)}")
+            except (KeyError, ValueError, TypeError) as e:
+                logger.warning(f"Error processing ETF data: {str(e)}")
                 continue
-
+        
+        
         # Deuxième passage: créer les nœuds d'actifs
         for asset_id, info in asset_info.items():
+            if not isinstance(info, dict):
+                continue
+            
             self.asset_node_indices[asset_id] = current_idx
             asset_ids.append(asset_id)
             
@@ -152,13 +175,18 @@ class ETFGraphProcessor:
                 if feature == 'sector' and self.config.sectors:
                     if value in self.config.sectors:
                         asset_features[col_idx] = float(self.config.sectors.index(value) + 1)
-                else:
-                    # Conversion en float pour les autres caractéristiques
-                    asset_features[col_idx] = float(value) if isinstance(value, (int, float)) else 0.0
+                
+                else: 
+                    # Conversion en float pour les autres caractéristique
+                    try:
+                        asset_features[col_idx] = float(value) if isinstance(value, (int, float)) else 0.0
+                    except (ValueError, TypeError):
+                        asset_features[col_idx] = 0.0
             
             node_features.append(asset_features)
             current_idx += 1
-
+            
+        
         # Troisième passage: créer les connections et attributs d'arête
         for etf_id, asset_id, holding in holdings_info:
             etf_idx = self.etf_node_indices.get(etf_id)
@@ -172,16 +200,23 @@ class ETFGraphProcessor:
                 edge_attr = []
                 for attr in self.config.edge_attributes:
                     value = holding.get(attr, 0.0)
-                    edge_attr.append(float(value))
+                    
+                    try:
+                        edge_attr.append(float(value))
+                    except (ValueError, TypeError):
+                        edge_attr.append(0.0)
                 edge_attributes.append(edge_attr)
         
         return (
-            np.array(node_features, dtype=np.float32), 
+            np.array(node_features, dtype=np.float32),
             edge_index, 
             etf_ids, 
             asset_ids,
             edge_attributes
-        )
+            )
+    
+
+
 
     def _get_nested_value(self, data: Dict, path: str) -> Any:
         """Accès sécurisé aux valeurs imbriquées avec conversion en float"""

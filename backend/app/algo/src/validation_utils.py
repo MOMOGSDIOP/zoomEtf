@@ -106,19 +106,19 @@ class ETFValidator:
                     if not (bounds['low'] <= vol <= bounds['high']):
                         flag['is_valid'] = False
                         flag['reasons'].append('volatility_out_of_bounds')
-
-
-        # Vérification du TER
-        if 'max_ter' in self.thresholds:
-            ter = etf_row.get('fundamentals.costs.ter')
-            if ter is None:
-                flag['is_valid'] = False
-                flag['reasons'].append('missing_ter_data')
-            elif ter > self.thresholds['max_ter']:
-                flag['is_valid'] = False
-                flag['reasons'].append('ter_too_high')
-
-        flags.append(flag)
+                        
+            
+            # Vérification du TER
+            if 'max_ter' in self.thresholds:
+                ter = etf_row.get('fundamentals.costs.ter')
+                if ter is None:
+                    flag['is_valid'] = False
+                    flag['reasons'].append('missing_ter_data')
+                elif ter > self.thresholds['max_ter']:
+                    flag['is_valid'] = False
+                    flag['reasons'].append('ter_too_high')
+            
+            flags.append(flag)
 
         return flags
 

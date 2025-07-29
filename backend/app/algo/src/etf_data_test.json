@@ -1,6 +1,7 @@
 [
   {
-    "etfId": "IVV-US-USD",
+    "etfId": 1,
+    "etfname": "IVV-US-USD",
     "name": "iShares Core S&P 500 ETF",
     "metadata": {
       "issuer": "BlackRock",
@@ -138,7 +139,8 @@
     }
   },
   {
-    "etfId": "EEM-US-USD",
+    "etfId":2,
+    "etfname": "EEM-US-USD",
     "name": "iShares MSCI Emerging Markets ETF",
     "metadata": {
       "issuer": "BlackRock",
@@ -278,7 +280,8 @@
     }
   },
   {
-    "etfId": "GLD-US-USD",
+    "etfId": 3,
+    "etfname": "GLD-US-USD",
     "name": "SPDR Gold Shares",
     "metadata": {
       "issuer": "State Street Global Advisors",
@@ -414,7 +417,8 @@
     }
   },
   {
-    "etfId": "VTI-US-USD",
+    "etfId": 4,
+    "etfname": "VTI-US-USD",
     "name": "Vanguard Total Stock Market ETF",
     "metadata": {
       "issuer": "Vanguard",
@@ -552,7 +556,8 @@
     }
   },
   {
-    "etfId": "XLK-US-USD",
+    "etfId": 5,
+    "etfname": "XLK-US-USD",
     "name": "Technology Select Sector SPDR Fund",
     "metadata": {
       "issuer": "State Street Global Advisors",
@@ -688,7 +693,8 @@
     }
   },
   {
-    "etfId": "IEFA-US-USD",
+    "etfId": 6,
+    "etfname": "EFA-US-USD",
     "name": "iShares Core MSCI EAFE ETF",
     "metadata": {
       "issuer": "BlackRock",
@@ -828,7 +834,8 @@
     }
   },
   {
-    "etfId": "LQD-US-USD",
+    "etfId": 7,
+    "etfname": "LQD-US-USD",
     "name": "iShares iBoxx $ Investment Grade Corporate Bond ETF",
     "metadata": {
       "issuer": "BlackRock",
@@ -968,7 +975,8 @@
     }
   },
   {
-    "etfId": "ARKK-US-USD",
+    "etfId": 8,
+    "etfname": "ARKK-US-USD",
     "name": "ARK Innovation ETF",
     "metadata": {
       "issuer": "ARK Invest",
@@ -1108,7 +1116,8 @@
     }
   },
   {
-    "etfId": "VT-US-USD",
+    "etfId": 10,
+    "etfname": "VT-US-USD",
     "name": "Vanguard Total World Stock ETF",
     "metadata": {
       "issuer": "Vanguard",
@@ -1248,7 +1257,8 @@
     }
   },
   {
-    "etfId": "QQQ-US-USD",
+    "etfId": 11,
+    "etfname": "QQQ-US-USD",
     "name": "Invesco QQQ Trust",
     "metadata": {
       "issuer": "Invesco",
@@ -1386,7 +1396,8 @@
     }
   },
   {
-    "etfId": "BND-US-USD",
+    "etfId": 12, 
+    "etfname": "BND-US-USD",
     "name": "Vanguard Total Bond Market ETF",
     "metadata": {
       "issuer": "Vanguard",
@@ -1525,7 +1536,8 @@
     }
   },
   {
-    "etfId": "SPY-US-USD",
+    "etfId": 13,
+    "etfname": "SPY-US-USD",
     "name": "SPDR S&P 500 ETF Trust",
     "metadata": {
       "issuer": "State Street Global Advisors",

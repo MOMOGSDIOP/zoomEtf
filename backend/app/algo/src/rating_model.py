@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import shap
 from datetime import datetime
 from torch_geometric.data import Data
-
+from pandas import json_normalize
 
 logger = logging.getLogger(__name__)
 
@@ -173,13 +173,10 @@ class ETFScoringEngine:
                 raise ValueError("X et y doivent avoir la même longueur")
             if epochs <= 0:
                 raise ValueError("Le nombre d'époques doisst être positif")
-            
-            # 1. Prétraitement des données
-            X_processed = self._prepare_etf_features(X)
-            if X_processed.empty:
+            if X.empty:
                 raise ValueError("Le DataFrame prétraité est vide")
 
-            X_tensor, y_tensor = self._prepare_tensors(X_processed, y)
+            X_tensor, y_tensor = self._prepare_tensors(X, y)
             
             # 2. Entraînement semi-supervisé principal
             train_metrics = self._train_semi_supervised(X_tensor, y_tensor, epochs)
@@ -190,7 +187,7 @@ class ETFScoringEngine:
                 gnn_metrics = self._train_with_gnn(graph_data, y_tensor)
                 train_metrics.update(gnn_metrics)
                 self.monitor.track_performance('gnn_loss', gnn_metrics['gnn_loss'])
-                
+
             # 4. Initialisation de l'explicateur SHAP
             #self._init_explainer(X_processed)
             
@@ -313,7 +310,7 @@ class ETFScoringEngine:
     
 
     
-    def _validate_config(self):
+    def _validate_config(self): 
         """Vérifie la cohérence de la configuration du moteur"""
         required_keys = ['input_dim', 'hidden_layers', 'learning_rate', 
                    'gnn_input_dim', 'REQUIRED_COLUMNS']
@@ -367,6 +364,7 @@ class ETFScoringEngine:
             index=sample.index
             )
     
+    
     def evaluate_stress_scenarios(self, X: pd.DataFrame) -> Dict:
         """Évalue les performances sous différents scénarios de stress
         Args:
@@ -375,6 +373,7 @@ class ETFScoringEngine:
         """
         return self.stress_tester.run_all_scenarios(X, self)
     
+
     def save(self, path: str):
         """Sauvegarde l'état complet du moteur"""
         state = {
@@ -386,6 +385,8 @@ class ETFScoringEngine:
         torch.save(state, path)
         logger.info("Model saved to %s", path)
     
+
+
     def load(self, path: str):
         """Charge un état sauvegardé"""
         state = torch.load(path)
@@ -393,6 +394,7 @@ class ETFScoringEngine:
         self.gnn_model.load_state_dict(state['gnn_state'])
         self.optimizer.load_state_dict(state['optimizer'])
         logger.info("Model loaded from %s", path)
+
 
 
     def run_full_analysis(self, raw_etf_data: List[Dict]) -> Dict:
@@ -404,15 +406,18 @@ class ETFScoringEngine:
         self.monitor.log_operation_start('full_analysis')
         
         try:
-            # 1. Validation des données d'entrée
-            if not raw_etf_data or not isinstance(raw_etf_data, list):
-                raise ValueError("Input data must be non-empty list of dicts")
+
+            # Traitement des données
+            flattened_df = json_normalize(raw_etf_data, sep='.')
+            processed = data_preprocessor.process_numerical_data(flattened_df)
+            processed_data = self.data_pipeline.process(processed)
             
-            # 2. Conversion et prétraitement
-            etf_df = pd.json_normalize(raw_etf_data)
-            processed_data = self.data_pipeline.process(etf_df)
             if processed_data.empty:
                 raise ValueError("Processed ETF data is empty after pipeline")
+            
+            if processed_data.isnull().values.any():
+                raise ValueError("NaN values detected in processed ETF data")
+            
             
             # 3 Construction des features et du graphe 
             graph_data = self.graph_processor.build_graph_from_raw(raw_etf_data)
@@ -440,8 +445,11 @@ class ETFScoringEngine:
                 feature_selector=features
                 )
             
+            # print(f"configuration du scoring Feature selector : 
+            # {scoring_system.feature_selector.columns}")
+            
             # Notation AVEC LES FEATURES
-            ratings = scoring_system.predict(features)
+            ratings = scoring_system.predict(scoring_system.feature_selector)
     
             # 7. Analyse de risque avec validation
             validator = ETFValidator(thresholds=self.config['VALIDATION_THRESHOLDS'])
@@ -502,6 +510,9 @@ class ETFScoringEngine:
             raise
 
 
+
+
+
     ## LEs méthodes privées pour la préparation des données et des tensors
     # sont utilisées pour transformer les données brutes en formats utilisables par les modèles.
     
@@ -509,13 +520,6 @@ class ETFScoringEngine:
     def _prepare_tensors(self, X: pd.DataFrame, y: pd.Series) -> Tuple[torch.Tensor, torch.Tensor]:
         
         try:
-
-            if X.isnull().values.any():
-                raise ValueError("NaN detected in features")
-                
-            if y.isnull().values.any():
-                raise ValueError("NaN detected in target")
-            
             X_tensor = torch.FloatTensor(X.values).to(self.device)
             
             if isinstance(y, (pd.Series, np.ndarray)):
@@ -659,14 +663,10 @@ if __name__ == "__main__":
         
         if missing_fields:
             logger.warning("Missing required fields: %s", missing_fields)
-        
-        # Traitement des données
-        processed_data = data_preprocessor.process_numerical_data(
-            pd.DataFrame(etf_data)
-        )
+       
         
         # Exécution et sauvegarde
-        results = engine.run_full_analysis(processed_data.to_dict('records'))
+        results = engine.run_full_analysis(etf_data)
         du.save_results(results)  # Utilisation de notre fonction sécurisée
       
     except Exception as e:
