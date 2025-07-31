@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-28T15:52:49.555954",
+  "timestamp": "2025-07-29T11:21:26.379498",
   "ratings": [],
   "risk_analysis": {
     "risk_distribution": {},
@@ -138,7 +138,7 @@
   },
   "system": {
     "device": "cpu",
-    "memory_usage": "860.23 MB",
+    "memory_usage": "860.92 MB",
     "processing_time": 0.0
   }
 }

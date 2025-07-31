@@ -667,7 +667,7 @@ if __name__ == "__main__":
         
         # Exécution et sauvegarde
         results = engine.run_full_analysis(etf_data)
-        du.save_results(results)  # Utilisation de notre fonction sécurisée
+        du.save_results(results)  
       
     except Exception as e:
         logger.error("System failure: %s", str(e), exc_info=True)
