@@ -119,11 +119,11 @@ services:
     image: zoometf-frontend
     env_file:
       - ./frontend/.env
-    volumes:
-      - ./frontend/src:/app/src           # Uniquement les sources
-      - ./frontend/public:/app/public      # Uniquement les assets
-      - ./frontend/package.json:/app/package.json  # package.json explicitement
-      - /app/node_modules
+    #volumes:
+      #- ./frontend/src:/app/src           # Uniquement les sources
+      #- ./frontend/public:/app/public      # Uniquement les assets
+      #- ./frontend/package.json:/app/package.json  # package.json explicitement
+      #- /app/node_modules
     ports:
       - "3001:3000"  # Port exposé pour le frontend
     command: sh -c "npm install && npm start"
